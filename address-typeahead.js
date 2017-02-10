@@ -253,6 +253,7 @@
 
     this.config = config || {};
     this.messages = extend({
+      required: 'Indica tu dirección',
       number_missing: 'Falta el número de la calle',
       make_choice: 'No es una dirección válida'
     }, this.config.messages || {});
@@ -397,6 +398,12 @@
     function onInput (_e) {
       var value = this.value, currentAddress = addressResult;
 
+      input.setCustomValidity('');
+
+      if( this.getAttribute('required') !== null && !this.value ) {
+        input.setCustomValidity(ta.messages.required);
+      }
+
       // if( !addressResult ) {
       //   input.setCustomValidity(ta.messages.number_missing);
       // }
@@ -415,6 +422,10 @@
         //   input.setCustomValidity(ta.messages.number_missing);
         // }
       });
+    }
+
+    if( input.getAttribute('required') !== null && !input.value ) {
+      input.setCustomValidity(ta.messages.required);
     }
 
     listen(input, 'input', onInput);
