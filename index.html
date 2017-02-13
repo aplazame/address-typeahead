@@ -91,6 +91,7 @@
         <form action="javascript:console.log('gogogo!');" class="pure-form pure-form-stacked">
           <div class="pure-g">
             <input class="pure-u-1" type="text" placeholder="Google Maps API key" required></input>
+            <div class="pure-u-1 text validation-message" style="color: firebrick"></div>
             <input class="pure-u-1" type="search" placeholder="Buscar dirección" autofocus required></input>
           </div>
 
@@ -119,6 +120,8 @@
 
       var appKey = qs.key || localStorage.getItem('app-key'), ta,
           inputKey = document.querySelector('input[type=text]'),
+          inputStreet = document.querySelector('input[type=search]'),
+          validationMessage = document.querySelector('.validation-message'),
           googleConfig = {
             types: ['address'],
             componentRestrictions: {
@@ -132,10 +135,16 @@
             document.querySelector('pre.code').innerHTML = JSON.stringify(result, null, '  ');
           };
 
+      inputStreet.value = localStorage.getItem('app-search') || '';
+
       if( appKey ) {
         ta = new AddressTypeahead('google', appKey, {
           google: googleConfig, messages: messages
-        }).bind('input[type=search]', onValidresult, '.typeahead-wrapper');
+        }).bind('input[type=search]', '.typeahead-wrapper')
+          .on('place', onValidresult)
+          .on('change', function () {
+            validationMessage.textContent = this.validationMessage;
+          });
         inputKey.value = appKey;
       }
 
@@ -145,7 +154,11 @@
         if( ta ) ta.unbind();
         ta = new AddressTypeahead('google', appKey, {
           google: googleConfig, messages: messages
-        }).bind('input[type=search]', onValidresult, '.typeahead-wrapper');
+        }).bind('input[type=search]', '.typeahead-wrapper').on('place', onValidresult);
+      });
+
+      inputStreet.addEventListener('input', function () {
+        localStorage.setItem('app-search', this.value);
       });
     </script>
   </body>

@@ -41,13 +41,13 @@
 
   function debounce (fn, duration) {
     duration = duration || 200;
-    var waiting;
+    var sec = 0;
 
     return function () {
-      var thisArg = this, args = arguments;
+      var thisArg = this, args = arguments, n = ++sec;
 
-      if( waiting ) clearTimeout(waiting);
-      waiting = setTimeout(function () {
+      setTimeout(function () {
+        if( n !== sec ) return;
         fn.apply(thisArg, args);
       }, duration);
     };
@@ -80,19 +80,8 @@
 
   function address2Search (address, numberPlaceholder) {
     if( !address ) return '';
-    return address.street + ( commaIf(address.street_number) || (numberPlaceholder ? ', ' : '') ) + commaIf(address.city || address.locality);
+    return address.street + ( commaIf(address.street_number) || (numberPlaceholder ? ', ' : '') ) + commaIf(address.sublocality || address.locality || address.city);
   }
-
-  // var closest = document.documentElement.closest ? function (el, s) {
-  //   return el.closest(s);
-  // } : function (el, s) {
-  //   var matches = (el.document || el.ownerDocument).querySelectorAll(s), i;
-  //   do {
-  //       i = matches.length;
-  //       while (--i >= 0 && matches.item(i) !== el) {};
-  //   } while ((i < 0) && (el = el.parentElement));
-  //   return el;
-  // };
 
   var listen = document.documentElement.addEventListener ? function(element, eventName, listener, useCapture) {
       return element.addEventListener(eventName, listener, useCapture);
@@ -124,6 +113,8 @@
     };
 
   // --------------------------------------------------------------------------
+
+  var isAndroid = typeof navigator !== 'undefined' && navigator.userAgent.indexOf('Android') !== -1;
 
   function GooglePlaces (key, config) {
     this.key = key;
@@ -219,7 +210,7 @@
     return result;
   };
 
-  GooglePlaces.parsePlace = function (place) {
+  GooglePlaces.parsePlace = function (place, prediction) {
     var fields = {};
 
     place.address_components.forEach(function (component) {
@@ -239,7 +230,8 @@
     return {
       address: address,
       fields: fields,
-      place: place
+      place: place,
+      prediction: prediction,
     };
   };
 
@@ -263,13 +255,33 @@
 
   AddressTypeahead.GooglePlaces = GooglePlaces;
 
-  AddressTypeahead.prototype.bind = function (input, onValidPlace, appendTo) {
+  AddressTypeahead.prototype.bind = function (input, wrapperParent) {
     input = typeof input === 'string' ? document.querySelector(input) : input;
     this.input = input;
 
     var ta = this,
       // google object
         places = this.places,
+
+        listeners = {},
+
+        on = function (eventName, handler) {
+          if( typeof handler !== 'function' ) throw new Error('handler should be a function');
+          listeners[eventName] = listeners[eventName] || [];
+          listeners[eventName].push(handler);
+          return autocomplete;
+        },
+
+        emit = function (eventName, args) {
+          (listeners[eventName] || []).forEach(function (listener) {
+            listener.apply(input, args || []);
+          });
+        },
+
+        autocomplete = {
+          on: on,
+          input: input
+        },
 
     // DOM nodes
         predictionsWrapper = createElement('div', { className: 'predictions' }),
@@ -278,9 +290,15 @@
             predictionsWrapper, createElement('div', { className: 'typeahead-license' }, places.licenseHTML)
           ]);
 
-          ( appendTo ? ( typeof appendTo === 'string' ? document.querySelector(appendTo) : appendTo ) : document.body ).appendChild(wrapper);
+          ( wrapperParent ? ( typeof wrapperParent === 'string' ? document.querySelector(wrapperParent) : wrapperParent ) : document.body ).appendChild(wrapper);
           return wrapper;
         })(),
+        showWrapper = function () {
+          wrapper.style.display = null;
+        },
+        hideWrapper = function () {
+          wrapper.style.display = 'none';
+        },
 
       // loaded predictions
         predictions = [],
@@ -294,6 +312,20 @@
         addressResult = null,
 
       // renders loaded predictions
+        selectPrediction = function (cursor) {
+
+          if( predictionsWrapper && predictionsWrapper.children ) {
+            if( selectedCursor >= 0 && predictionsWrapper.children[selectedCursor] ) {
+              removeClass(predictionsWrapper.children[selectedCursor], 'selected');
+            }
+            if( cursor >= 0 ) {
+              addClass(predictionsWrapper.children[cursor], 'selected');
+            }
+          }
+
+          selectedCursor = cursor >= 0 ? cursor : -1;
+        },
+
         renderPredictions = function (_predictions, beforeRender, afterRender) {
           var i, n, children = predictionsWrapper.children;
 
@@ -301,7 +333,7 @@
 
           safeFn(beforeRender)();
 
-          wrapper.style.display = null;
+          // wrapper.style.display = null;
 
           if( predictions.length > children.length ) {
             for( i = 0, n = predictions.length - children.length ; i < n ; i++ ) {
@@ -311,9 +343,8 @@
 
           for( i = 0, n = predictions.length; i < n ; i++ ) {
             children[i].innerHTML = places.getPredictionHTML(predictions[i]);
-            if( i === selectedCursor ) addClass(children[i], 'selected');
-            else removeClass(children[i], 'selected');
           }
+          selectPrediction(selectedCursor);
 
           if( predictions.length < children.length ) {
             while( children[predictions.length] ) {
@@ -321,61 +352,60 @@
             }
           }
 
-          if( predictions.length ) wrapper.style.display = null;
-          else wrapper.style.display = 'none';
+          // if( predictions.length ) wrapper.style.display = null;
+          // else wrapper.style.display = 'none';
 
           safeFn(afterRender)();
         },
 
       // debouncing predictions request for 400ms
-        debouncedPredictions = debounce(function (value, loading, cb) {
-          loading();
-          places.getPredictions(value, cb);
+        debouncedPredictions = debounce(function (value, cb) {
+          if( predictionsCache[value] ) {
+            cb( predictionsCache[value] ); return;
+          }
+          places.getPredictions(value, function (results) {
+            predictionsCache[value] = results;
+            cb(results);
+          });
         }, 400),
-        numDebounced = 0,
+        // numDebounced = 0,
 
       // fetches predictions if any value and not cached
         fetchResults = function (value, beforeRender, afterRender, skipRender) {
           addressResult = null;
 
           if( value ) {
-            if( predictionsCache[value] ) {
-              if( !skipRender ) renderPredictions(predictionsCache[value], beforeRender, afterRender);
-            } else {
-              var sec = ++numDebounced;
-              debouncedPredictions(value, function () {
-                addClass(wrapper, 'js-typeahead-loading');
-              }, function (results) {
-                if( sec !== numDebounced ) return;
-                removeClass(wrapper, 'js-typeahead-loading');
-                predictionsCache[value] = results;
-                if( !skipRender ) renderPredictions(results, beforeRender, afterRender);
-              });
-            }
+            // var sec = ++numDebounced;
+            addClass(wrapper, 'js-typeahead-loading');
+            debouncedPredictions(value, function (results) {
+              // if( sec !== numDebounced ) return;
+              removeClass(wrapper, 'js-typeahead-loading');
+              predictionsCache[value] = results;
+              if( !skipRender ) renderPredictions(results, beforeRender, afterRender);
+            });
           } else {
             if( !skipRender ) renderPredictions([], beforeRender, afterRender);
           }
         },
 
       // when a place is choosed
-        onPlace = function (place) {
-          addressResult = ta.parsePlace(place);
+        onPlace = function (place, updateInput) {
+          addressResult = ta.parsePlace(place, predictions[selectedCursor]);
 
-          var address = addressResult.address;
+          if( updateInput !== false ) {
+            input.value = address2Search( addressResult.address, true );
 
-          input.value = address2Search( address, true );
-          // fetchResults(input.value, null, null, true);
+            if( addressResult.address.street_number ) {
+              input.setCustomValidity('');
+              emit('place', [addressResult]);
+            } else {
+              input.setCustomValidity(ta.messages.number_missing);
+            }
+            emit('change', [addressResult]);
 
-          if( address.street_number ) {
-            input.setCustomValidity('');
-            removeClass(input, 'waiting-number');
-            safeFn(onValidPlace)(addressResult);
-          } else {
-            input.setCustomValidity(ta.messages.number_missing);
-            addClass(input, 'waiting-number');
-            focusAddressNumber();
+          } else if( addressResult.address.street_number ) {
+            emit('place', [addressResult]);
           }
-
         },
 
       // last fetched value
@@ -398,11 +428,15 @@
     function onInput (_e) {
       var value = this.value, currentAddress = addressResult;
 
-      input.setCustomValidity('');
-
       if( this.getAttribute('required') !== null && !this.value ) {
         input.setCustomValidity(ta.messages.required);
+        hideWrapper();
+        emit('change', [addressResult]);
+        return;
       }
+
+      input.setCustomValidity('');
+      emit('change', [addressResult]);
 
       // if( !addressResult ) {
       //   input.setCustomValidity(ta.messages.number_missing);
@@ -414,46 +448,62 @@
           lastValue = value;
         }
 
-        if( currentAddress && !currentAddress.address.street_number && predictions.length === 1 ) {
+        if( predictions.length ) {
           addressResult = currentAddress;
-          places.getDetails(predictions[selectedCursor], onPlace);
-          // input.setCustomValidity('');
+          places.getDetails(predictions[selectedCursor], function (details) {
+            onPlace(details, false);
+            emit('change', [addressResult]);
+          });
+        } else {
+          emit('change', [addressResult]);
         }
+
+        if( document.activeElement === input ) showWrapper();
+
+        // if( currentAddress && !currentAddress.address.street_number && predictions.length === 1 ) {
+        //   addressResult = currentAddress;
+        //   places.getDetails(predictions[selectedCursor], onPlace);
+        // }
         //   input.setCustomValidity(ta.messages.number_missing);
         // }
       });
     }
 
+    autocomplete.parse = function () {
+      onInput.call(input);
+    };
+
     if( input.getAttribute('required') !== null && !input.value ) {
       input.setCustomValidity(ta.messages.required);
     }
 
-    listen(input, 'input', onInput);
-    listen(input, 'change', onInput);
+    listen(input, isAndroid ? 'keyup' : 'input', onInput);
+    hideWrapper();
+    if( input.value ) {
+      onInput.call(input);
+    }
 
-    function onBlur (e) {
-      if( !addressResult && predictionsWrapper.children[selectedCursor] ) {
+    function onBlur (_e, keepFocus) {
+      if( !keepFocus ) hideWrapper();
+
+      if( !addressResult || !addressResult.address.street_number || (predictions[selectedCursor] && addressResult.place.id !== predictions[selectedCursor].id) ) {
         places.getDetails(predictions[selectedCursor], function (details) {
           onPlace(details);
           if( addressResult ) {
+            input.value = address2Search( addressResult.address, true );
             if( addressResult.address.street_number ) {
-              wrapper.style.display = 'none';
-              input.blur();
-            } else {
+              hideWrapper();
+            } else if( keepFocus ) {
               focusAddressNumber();
             }
+            emit('change', [addressResult]);
           }
         });
-        e.preventDefault();
-        focusAddressNumber();
-        return;
+      } else {
+        input.value = address2Search( addressResult.address, true );
+        emit('change', [addressResult]);
+        hideWrapper();
       }
-      if( waitingNumber() ) {
-        e.preventDefault();
-        focusAddressNumber();
-        return;
-      }
-      wrapper.style.display = 'none';
     }
 
     listen(input, 'blur', onBlur);
@@ -466,7 +516,7 @@
           cursor = getIndex(predictionsWrapper.children, el);
         } else if( el === predictionsWrapper ) {
           if( cursor >= 0 ) {
-            selectedCursor = cursor;
+            selectPrediction(cursor);
             places.getDetails(predictions[cursor], onPlace);
           }
           break;
@@ -477,55 +527,51 @@
 
     listen(input, 'keydown', function (e) {
       var children = predictionsWrapper.children,
-          cursorLastChild = children.length - 1, nextCursor;
+          cursorLastChild = children.length - 1;
 
       switch( e.keyCode ) {
         case 38:
           if( !predictionsWrapper.children.length ) return;
           e.preventDefault();
-          nextCursor = selectedCursor >= 0 ? (selectedCursor > 0 ? (selectedCursor - 1) : 0) : cursorLastChild;
-          if( nextCursor === selectedCursor ) return;
-          if( children[selectedCursor] ) removeClass(children[selectedCursor], 'selected');
-          addClass(children[nextCursor], 'selected');
-          selectedCursor = nextCursor;
+          selectPrediction( selectedCursor >= 0 ? (selectedCursor > 0 ? (selectedCursor - 1) : 0) : cursorLastChild );
+          // input.value = predictions[selectedCursor].structured_formatting.main_text;
+          input.value = predictions[selectedCursor].description;
           break;
         case 40:
           if( !predictionsWrapper.children.length ) return;
           e.preventDefault();
-          nextCursor = selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0;
-          if( nextCursor === selectedCursor ) return;
-          if( children[selectedCursor] ) removeClass(children[selectedCursor], 'selected');
-          addClass(children[nextCursor], 'selected');
-          selectedCursor = nextCursor;
+          selectPrediction( selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0 );
+          // input.value = predictions[selectedCursor].structured_formatting.main_text;
+          input.value = predictions[selectedCursor].description;
           break;
+        case 9:
         case 13:
-          onBlur(e);
-          // if( !addressResult ) e.preventDefault();
+          if( wrapper.style.display === null ) e.preventDefault();
+          onBlur(null);
           break;
       }
     });
-
-    wrapper.style.display = 'none';
 
     listen(input, 'focus', function () {
       if( waitingNumber() ) {
+        input.value = address2Search( addressResult.address, true );
         focusAddressNumber();
+        showWrapper();
+      } else if( predictions.length ) {
+        if( addressResult ) input.value = addressResult.place.name;
+        showWrapper();
+      } else if( input.value ) {
+        onInput.call(input);
       }
-
-      if( predictions.length ) wrapper.style.display = null;
     });
 
     listen(input, 'click', function () {
-      if( predictions.length ) wrapper.style.display = null;
-
-      if( this.value !== lastValue ) fetchResults(this.value, null, function () {
-        if( predictions.length ) wrapper.style.display = null;
-      });
-
-      if( document.activeElement !== input && waitingNumber() ) focusAddressNumber();
+      if( waitingNumber() ) focusAddressNumber();
+      else if( wrapper.style.display === null && addressResult ) input.value = addressResult.place.name;
+      if( input.value ) showWrapper();
     });
 
-    return this;
+    return autocomplete;
   };
 
   AddressTypeahead.prototype.unbind = function () { return this; };
