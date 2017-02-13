@@ -281,7 +281,8 @@
 
         autocomplete = {
           on: on,
-          input: input
+          emit: emit,
+          input: input,
         },
 
     // DOM nodes
@@ -440,6 +441,8 @@
       input.setCustomValidity('');
       emit('change', [addressResult]);
 
+      if( !value ) return;
+
       // if( !addressResult ) {
       //   input.setCustomValidity(ta.messages.number_missing);
       // }
@@ -475,17 +478,13 @@
       onInput.call(input);
     };
 
-    if( input.getAttribute('required') !== null && !input.value ) {
-      input.setCustomValidity(ta.messages.required);
-    }
-
     listen(input, isAndroid ? 'keyup' : 'input', onInput);
     hideWrapper();
-    if( input.value ) {
-      onInput.call(input);
-    }
+    onInput.call(input);
 
     function onBlur (_e, keepFocus) {
+      if( !input.value ) return;
+
       if( !keepFocus ) hideWrapper();
 
       if( !addressResult || !addressResult.address.street_number || (predictions[selectedCursor] && addressResult.place.id !== predictions[selectedCursor].id) ) {
@@ -565,6 +564,8 @@
 
       switch( e.keyCode ) {
         case 13:
+          if( !input.value || !predictions.length ) return;
+
           e.preventDefault();
           // if( waitingNumber() ) focusAddressNumber();
           setTimeout(function () {
