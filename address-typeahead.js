@@ -80,7 +80,8 @@
 
   function address2Search (address, numberPlaceholder) {
     if( !address ) return '';
-    return address.street + ( commaIf(address.street_number) || (numberPlaceholder ? ', ' : '') ) + commaIf(address.sublocality || address.locality || address.city);
+    var areaName = address.sublocality || address.locality || address.city;
+    return address.street + ( commaIf(address.street_number) || (numberPlaceholder ? ', ' : '') ) + commaIf(areaName !== address.street && areaName);
   }
 
   var listen = document.documentElement.addEventListener ? function(element, eventName, listener, useCapture) {
