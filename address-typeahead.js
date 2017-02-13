@@ -400,6 +400,7 @@
               input.setCustomValidity('');
               emit('place', [addressResult]);
             } else {
+              input.setSelectionRange(addressResult.address.street.length + 2, addressResult.address.street.length + 2);
               input.setCustomValidity(ta.messages.number_missing);
             }
             emit('change', [addressResult]);
@@ -517,6 +518,7 @@
           cursor = getIndex(predictionsWrapper.children, el);
         } else if( el === predictionsWrapper ) {
           if( cursor >= 0 ) {
+            e.preventDefault();
             selectPrediction(cursor);
             places.getDetails(predictions[cursor], onPlace);
           }
@@ -548,6 +550,10 @@
         case 9:
         case 13:
           if( wrapper.style.display === null ) e.preventDefault();
+          // else if( input.validationMessage ) {
+          //   e.preventDefault();
+          //   focusAddressNumber();
+          // }
           onBlur(null);
           break;
       }
@@ -571,6 +577,14 @@
       else if( wrapper.style.display === null && addressResult ) input.value = addressResult.place.name;
       if( input.value ) showWrapper();
     });
+
+    // listen(input, 'invalid', function () {
+    //   console.log('input invalid', input);
+    //   if( waitingNumber() )
+    //   setTimeout(function () {
+    //     focusAddressNumber();
+    //   }, 100);
+    // });
 
     return autocomplete;
   };
