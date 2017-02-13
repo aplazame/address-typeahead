@@ -416,11 +416,12 @@
               input.setSelectionRange(addressResult.address.street.length + 2, addressResult.address.street.length + 2);
               updateValidity();
             }
-            emit('change', [addressResult]);
 
           } else if( addressResult.address.street_number ) {
             emit('place', [addressResult]);
           }
+
+          emit('change', [addressResult]);
         },
 
       // last fetched value
@@ -457,7 +458,8 @@
           addressResult = currentAddress;
           places.getDetails(predictions[selectedCursor], function (details) {
             onPlace(details, false);
-            emit('change', [addressResult]);
+            updateValidity();
+            // emit('change', [addressResult]);
           });
         } else {
           emit('change', [addressResult]);
@@ -543,33 +545,34 @@
         case 9:
           onBlur(null);
           break;
-        // case 13:
-        //   if( wrapper.style.display === null ) e.preventDefault();
-        //   // else if( input.validationMessage ) {
-        //   //   e.preventDefault();
-        //   //   focusAddressNumber();
-        //   // }
-        //   onBlur(null);
-        //   break;
+        case 13:
+          if( !input.value || !predictions.length ) return;
+
+          onBlur(null);
+
+          if( !input.validationMessage ) {
+            if( wrapper.style.display !== 'none' ) {
+              e.preventDefault();
+              hideWrapper();
+            }
+            return;
+          }
+          break;
       }
     });
 
-    listen(input, 'keydown', function (e) {
+    listen(input, 'keyup', function (e) {
 
       switch( e.keyCode ) {
         case 13:
           if( !input.value || !predictions.length ) return;
 
-          e.preventDefault();
-          // if( waitingNumber() ) focusAddressNumber();
-          setTimeout(function () {
-            input.setSelectionRange(addressResult.address.street.length + 2, addressResult.address.street.length + 2);
-          }, 10);
-          // else if( input.validationMessage ) {
-          //   e.preventDefault();
-          //   focusAddressNumber();
-          // }
-          onBlur(null);
+          if( waitingNumber() ) {
+            setTimeout(function () {
+              input.setSelectionRange(addressResult.address.street.length + 2, addressResult.address.street.length + 2);
+            }, 100);
+          }
+
           break;
       }
     });
