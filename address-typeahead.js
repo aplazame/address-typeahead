@@ -390,6 +390,18 @@
           }
         },
 
+        updateValidity = function () {
+          if( input.getAttribute('required') !== null && !input.value ) {
+            input.setCustomValidity(ta.messages.required);
+            hideWrapper();
+            emit('change', [addressResult]);
+            return;
+          }
+
+          input.setCustomValidity( waitingNumber() ? ta.messages.number_missing : '');
+          emit('change', [addressResult]);
+        },
+
       // when a place is choosed
         onPlace = function (place, updateInput) {
           addressResult = ta.parsePlace(place, predictions[selectedCursor]);
@@ -398,11 +410,11 @@
             input.value = address2Search( addressResult.address, true );
 
             if( addressResult.address.street_number ) {
-              input.setCustomValidity('');
+              updateValidity();
               emit('place', [addressResult]);
             } else {
               input.setSelectionRange(addressResult.address.street.length + 2, addressResult.address.street.length + 2);
-              input.setCustomValidity(ta.messages.number_missing);
+              updateValidity();
             }
             emit('change', [addressResult]);
 
@@ -429,23 +441,11 @@
     }
 
     function onInput (_e) {
-      var value = this.value, currentAddress = addressResult;
+      var value = input.value, currentAddress = addressResult;
 
-      if( this.getAttribute('required') !== null && !this.value ) {
-        input.setCustomValidity(ta.messages.required);
-        hideWrapper();
-        emit('change', [addressResult]);
-        return;
-      }
-
-      input.setCustomValidity('');
-      emit('change', [addressResult]);
+      updateValidity();
 
       if( !value ) return;
-
-      // if( !addressResult ) {
-      //   input.setCustomValidity(ta.messages.number_missing);
-      // }
 
       fetchResults(value, function () {
         if( lastValue === null || value !== lastValue ) {
@@ -464,13 +464,6 @@
         }
 
         if( document.activeElement === input ) showWrapper();
-
-        // if( currentAddress && !currentAddress.address.street_number && predictions.length === 1 ) {
-        //   addressResult = currentAddress;
-        //   places.getDetails(predictions[selectedCursor], onPlace);
-        // }
-        //   input.setCustomValidity(ta.messages.number_missing);
-        // }
       });
     }
 
@@ -481,6 +474,7 @@
     listen(input, isAndroid ? 'keyup' : 'input', onInput);
     hideWrapper();
     onInput.call(input);
+    on('update-validity', updateValidity);
 
     function onBlur (_e, keepFocus) {
       if( !input.value ) return;
