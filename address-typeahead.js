@@ -504,6 +504,7 @@
         });
       } else {
         input.value = address2Search( addressResult.address, true );
+        updateValidity();
         emit('change', [addressResult]);
         hideWrapper();
       }
@@ -529,6 +530,14 @@
       }
     }, true);
 
+    function fetchDetails () {
+      places.getDetails(predictions[selectedCursor], function (place) {
+        onPlace(details, false);
+        // addressResult = ta.parsePlace(place, predictions[selectedCursor]);
+        emit('change', [addressResult]);
+      });
+    }
+
     listen(input, 'keydown', function (e) {
       var children = predictionsWrapper.children,
           cursorLastChild = children.length - 1;
@@ -540,6 +549,7 @@
           selectPrediction( selectedCursor >= 0 ? (selectedCursor > 0 ? (selectedCursor - 1) : 0) : cursorLastChild );
           // input.value = predictions[selectedCursor].structured_formatting.main_text;
           input.value = predictions[selectedCursor].description;
+          fetchDetails();
           break;
         case 40:
           if( !predictionsWrapper.children.length ) return;
@@ -547,6 +557,7 @@
           selectPrediction( selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0 );
           // input.value = predictions[selectedCursor].structured_formatting.main_text;
           input.value = predictions[selectedCursor].description;
+          fetchDetails();
           break;
         case 9:
           onBlur(null);
