@@ -532,7 +532,7 @@
 
     function fetchDetails () {
       places.getDetails(predictions[selectedCursor], function (place) {
-        onPlace(details, false);
+        onPlace(place, false);
         // addressResult = ta.parsePlace(place, predictions[selectedCursor]);
         emit('change', [addressResult]);
       });
@@ -609,8 +609,7 @@
     });
 
     listen(input, 'click', function () {
-      if( input.value !== fetchedValue ) onInput.call(input);
-      else if( waitingNumber() ) focusAddressNumber();
+      if( waitingNumber() ) focusAddressNumber();
       else if( wrapper.style.display === null && addressResult ) input.value = addressResult.place.name;
       if( input.value ) showWrapper();
     });
