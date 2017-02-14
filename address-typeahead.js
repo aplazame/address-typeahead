@@ -450,7 +450,11 @@
 
       updateValidity();
 
-      if( !value ) return;
+      if( !value ) {
+        addressResult = null;
+        predictions.splice(0, predictions.length);
+        return;
+      }
 
       fetchedValue = value;
       fetchResults(value, function () {
@@ -485,7 +489,7 @@
     on('update-validity', updateValidity);
 
     function onBlur (_e, keepFocus) {
-      if( !input.value ) return;
+      if( !input.value || !predictions[selectedCursor] ) return;
 
       if( !keepFocus ) hideWrapper();
 
