@@ -533,6 +533,7 @@
     function fetchDetails () {
       places.getDetails(predictions[selectedCursor], function (place) {
         onPlace(place, false);
+        updateValidity();
         // addressResult = ta.parsePlace(place, predictions[selectedCursor]);
         emit('change', [addressResult]);
       });
