@@ -131,8 +131,9 @@
           messages = {
             number_missing: 'Falta el número de la dirección'
           },
-          onValidresult = function (result) {
-            document.querySelector('pre.code').innerHTML = JSON.stringify(result, null, '  ');
+          onValidresult = function (place) {
+            console.log('place', place);
+            document.querySelector('pre.code').innerHTML = JSON.stringify(place, null, '  ');
           };
 
       inputStreet.value = localStorage.getItem('app-search') || '';

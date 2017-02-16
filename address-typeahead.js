@@ -413,18 +413,13 @@
           if( updateInput !== false ) {
             input.value = address2Search( addressResult.address, true );
 
-            if( addressResult.address.street_number ) {
-              updateValidity();
-              emit('place', [addressResult]);
-            } else if( addressResult ) {
+            if( !addressResult.address.street_number ) {
               input.setSelectionRange(addressResult.address.street.length + 2, addressResult.address.street.length + 2);
-              updateValidity();
             }
-
-          } else if( addressResult.address.street_number ) {
-            emit('place', [addressResult]);
+            updateValidity();
           }
 
+          emit('place', [addressResult]);
           emit('change', [addressResult]);
         },
 
@@ -472,6 +467,7 @@
             // emit('change', [addressResult]);
           });
         } else {
+          emit('place', [null]);
           emit('change', [addressResult]);
         }
 
