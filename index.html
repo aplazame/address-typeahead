@@ -145,6 +145,7 @@
           .on('place', onValidresult)
           .on('change', function (resultAddress, choosed ) {
             if( choosed ) validationMessage.textContent = this.validationMessage;
+            else validationMessage.textContent = '';
           });
         inputKey.value = appKey;
       }
