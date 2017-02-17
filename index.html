@@ -143,8 +143,8 @@
           google: googleConfig, messages: messages
         }).bind('input[type=search]', '.typeahead-wrapper')
           .on('place', onValidresult)
-          .on('change', function () {
-            validationMessage.textContent = this.validationMessage;
+          .on('change', function (resultAddress, choosed ) {
+            if( choosed ) validationMessage.textContent = this.validationMessage;
           });
         inputKey.value = appKey;
       }

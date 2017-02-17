@@ -393,17 +393,18 @@
 
         numberTyped = false,
         fetchedValue = '',
+        blurredChoice = false,
 
         updateValidity = function () {
           if( input.getAttribute('required') !== null && !input.value ) {
             input.setCustomValidity(ta.messages.required);
             hideWrapper();
-            emit('change', [addressResult]);
+            emit('change', [addressResult, blurredChoice]);
             return;
           }
 
           input.setCustomValidity( waitingNumber() ? (numberTyped ? ta.messages.number_mismatch : ta.messages.number_missing) : '');
-          emit('change', [addressResult]);
+          emit('change', [addressResult, blurredChoice]);
         },
 
       // when a place is choosed
@@ -420,7 +421,7 @@
           }
 
           emit('place', [addressResult]);
-          emit('change', [addressResult]);
+          emit('change', [addressResult, blurredChoice]);
         },
 
       // last fetched value
@@ -468,7 +469,7 @@
           });
         } else {
           emit('place', [null]);
-          emit('change', [addressResult]);
+          emit('change', [addressResult, blurredChoice]);
         }
 
         if( document.activeElement === input ) showWrapper();
@@ -491,6 +492,7 @@
 
       if( !addressResult || !addressResult.address.street_number || (predictions[selectedCursor] && addressResult.place.id !== predictions[selectedCursor].id) ) {
         places.getDetails(predictions[selectedCursor], function (details) {
+          blurredChoice = true;
           onPlace(details);
           if( addressResult ) {
             input.value = address2Search( addressResult.address, true );
@@ -499,13 +501,14 @@
             } else if( keepFocus ) {
               focusAddressNumber();
             }
-            emit('change', [addressResult]);
+            emit('change', [addressResult, blurredChoice]);
           }
         });
       } else {
+        blurredChoice = true;
         input.value = address2Search( addressResult.address, true );
         updateValidity();
-        emit('change', [addressResult]);
+        emit('change', [addressResult, blurredChoice]);
         hideWrapper();
       }
     }
@@ -521,8 +524,11 @@
         } else if( el === predictionsWrapper ) {
           if( cursor >= 0 ) {
             selectPrediction(cursor);
-            places.getDetails(predictions[cursor], onPlace);
-            input.blur();
+            places.getDetails(predictions[cursor], function (details) {
+              onPlace(details);
+              if( !waitingNumber ) input.blur();
+              else input.focus();
+            });
           }
           break;
         }
@@ -535,7 +541,7 @@
         onPlace(place, false);
         updateValidity();
         // addressResult = ta.parsePlace(place, predictions[selectedCursor]);
-        emit('change', [addressResult]);
+        // emit('change', [addressResult, blurredChoice]);
       });
     }
 
