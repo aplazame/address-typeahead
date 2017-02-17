@@ -444,13 +444,15 @@
     function onInput (_e) {
       var value = input.value, currentAddress = addressResult;
 
-      updateValidity();
-
       if( !value ) {
         addressResult = null;
         predictions.splice(0, predictions.length);
+        blurredChoice = false;
+        updateValidity();
         return;
       }
+
+      updateValidity();
 
       fetchedValue = value;
       fetchResults(value, function () {
