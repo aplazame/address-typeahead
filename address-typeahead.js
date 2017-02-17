@@ -526,7 +526,7 @@
             selectPrediction(cursor);
             places.getDetails(predictions[cursor], function (details) {
               onPlace(details);
-              if( !waitingNumber ) input.blur();
+              if( !waitingNumber() ) input.blur();
               else input.focus();
             });
           }
