@@ -376,6 +376,7 @@
       // fetches predictions if any value and not cached
         fetchResults = function (value, beforeRender, afterRender, skipRender) {
           // addressResult = null;
+          if( /\d$/.test(value) ) value += ' ';
 
           if( value ) {
             // var sec = ++numDebounced;
