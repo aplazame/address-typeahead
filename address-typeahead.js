@@ -247,7 +247,7 @@
       required: 'Indica tu dirección',
       number_missing: 'Falta el número de la calle',
       number_mismatch: 'El número indicado no existe',
-      make_choice: 'No es una dirección válida'
+      make_choice: 'No es una dirección válida',
     }, this.config.messages || {});
 
     if( !this.places ) throw new Error('typeahead `' + type + '` not supported');
@@ -360,16 +360,19 @@
         },
 
       // debouncing predictions request for 400ms
+        fetchingPredictions = false,
         debouncedPredictions = debounce(function (value, cb) {
           if( predictionsCache[value] ) {
             cb( predictionsCache[value] ); return;
           }
+          fetchingPredictions = true;
           places.getPredictions(value, function (results) {
+            fetchingPredictions = false;
             predictionsCache[value] = results;
             cb(results);
           }, function () {
-            predictionsCache[value] = [];
-            cb([]);
+            fetchingPredictions = false;
+            cb(null);
           });
         }, 400),
         // numDebounced = 0,
@@ -383,6 +386,15 @@
             // var sec = ++numDebounced;
             addClass(wrapper, 'js-typeahead-loading');
             debouncedPredictions(value, function (results) {
+              if( results === null ) {
+                addressResult = undefined;
+                predictions.splice(0, predictions.length);
+                updateValidity();
+                emit('place', [null]);
+                emit('change', [addressResult, blurredChoice]);
+                return;
+              }
+
               // if( sec !== numDebounced ) return;
               removeClass(wrapper, 'js-typeahead-loading');
               predictionsCache[value] = results;
@@ -399,7 +411,7 @@
 
         updateValidity = function () {
           if( input.getAttribute('required') !== null && (!input.value || !addressResult) ) {
-            input.setCustomValidity(ta.messages.required);
+            input.setCustomValidity( ( input.value && addressResult === undefined ) ? ta.messages.make_choice : ta.messages.required );
             hideWrapper();
             emit('change', [addressResult, blurredChoice]);
             return;
@@ -413,7 +425,7 @@
         onPlace = function (place, updateInput) {
           addressResult = place && ta.parsePlace(place, predictions[selectedCursor]);
 
-          if( updateInput !== false ) {
+          if( addressResult && updateInput !== false ) {
             input.value = address2Search( addressResult.address, true );
 
             if( !addressResult.address.street_number ) {
@@ -493,7 +505,7 @@
     on('update-validity', updateValidity);
 
     function onBlur (_e, keepFocus) {
-      if( !input.value || !predictions[selectedCursor] ) return;
+      if( !input.value || !predictions[selectedCursor] || fetchingPredictions ) return;
 
       if( !keepFocus ) hideWrapper();
 
@@ -511,7 +523,7 @@
             emit('change', [addressResult, blurredChoice]);
           }
         });
-      } else {
+      } else if( addressResult && !fetchingPredictions ) {
         blurredChoice = true;
         input.value = address2Search( addressResult.address, true );
         updateValidity();
@@ -612,7 +624,7 @@
         focusAddressNumber();
         showWrapper();
         if( input.value !== fetchedValue ) onInput.call(input);
-      } else if( predictions.length ) {
+      } else if( predictions && predictions.length ) {
         if( addressResult ) input.value = addressResult.place.name;
         showWrapper();
       } else if( input.value ) {
