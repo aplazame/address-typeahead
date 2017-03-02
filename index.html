@@ -131,9 +131,9 @@
           messages = {
             number_missing: 'Falta el número de la dirección'
           },
-          onValidresult = function (place) {
+          onPlace = function (place) {
             console.log('place', place);
-            document.querySelector('pre.code').innerHTML = JSON.stringify(place, null, '  ');
+            document.querySelector('pre.code').innerHTML = place ? '---' : JSON.stringify(place, null, '  ');
           };
 
       inputStreet.value = localStorage.getItem('app-search') || '';
@@ -142,7 +142,7 @@
         ta = new AddressTypeahead('google', appKey, {
           google: googleConfig, messages: messages
         }).bind('input[type=search]', '.typeahead-wrapper')
-          .on('place', onValidresult)
+          .on('place', onPlace)
           .on('change', function (resultAddress, choosed ) {
             if( choosed ) validationMessage.textContent = this.validationMessage;
             else validationMessage.textContent = '';
@@ -156,7 +156,7 @@
         if( ta ) ta.unbind();
         ta = new AddressTypeahead('google', appKey, {
           google: googleConfig, messages: messages
-        }).bind('input[type=search]', '.typeahead-wrapper').on('place', onValidresult);
+        }).bind('input[type=search]', '.typeahead-wrapper').on('place', onPlace);
       });
 
       inputStreet.addEventListener('input', function () {

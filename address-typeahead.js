@@ -172,8 +172,6 @@
       self.autocompleteService.getPlacePredictions( extend({
         input: input
       }, self.config ), function (predictions, status) {
-
-
         if( status != self.googlePredictionsOK ) {
           safeFn(onError)(status);
           return;
@@ -369,6 +367,9 @@
           places.getPredictions(value, function (results) {
             predictionsCache[value] = results;
             cb(results);
+          }, function () {
+            predictionsCache[value] = [];
+            cb([]);
           });
         }, 400),
         // numDebounced = 0,
@@ -397,7 +398,7 @@
         blurredChoice = false,
 
         updateValidity = function () {
-          if( input.getAttribute('required') !== null && !input.value ) {
+          if( input.getAttribute('required') !== null && (!input.value || !addressResult) ) {
             input.setCustomValidity(ta.messages.required);
             hideWrapper();
             emit('change', [addressResult, blurredChoice]);
@@ -410,7 +411,7 @@
 
       // when a place is choosed
         onPlace = function (place, updateInput) {
-          addressResult = ta.parsePlace(place, predictions[selectedCursor]);
+          addressResult = place && ta.parsePlace(place, predictions[selectedCursor]);
 
           if( updateInput !== false ) {
             input.value = address2Search( addressResult.address, true );
@@ -449,6 +450,7 @@
         addressResult = null;
         predictions.splice(0, predictions.length);
         blurredChoice = false;
+        onPlace(null, false);
         updateValidity();
         return;
       }
@@ -471,6 +473,8 @@
             // emit('change', [addressResult]);
           });
         } else {
+          addressResult = null;
+          updateValidity();
           emit('place', [null]);
           emit('change', [addressResult, blurredChoice]);
         }
@@ -543,8 +547,6 @@
       places.getDetails(predictions[selectedCursor], function (place) {
         onPlace(place, false);
         updateValidity();
-        // addressResult = ta.parsePlace(place, predictions[selectedCursor]);
-        // emit('change', [addressResult, blurredChoice]);
       });
     }
 
