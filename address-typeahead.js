@@ -299,6 +299,7 @@
         },
         hideWrapper = function () {
           wrapper.style.display = 'none';
+          emit('blur', [addressResult, blurredChoice]);
         },
 
       // loaded predictions
@@ -517,7 +518,6 @@
             input.value = address2Search( addressResult.address, true );
             if( addressResult.address.street_number ) {
               hideWrapper();
-              emit('blur', [addressResult, blurredChoice]);
             } else if( keepFocus ) {
               focusAddressNumber();
             }
@@ -530,8 +530,8 @@
         updateValidity();
         emit('change', [addressResult, blurredChoice]);
         hideWrapper();
-        emit('blur', [addressResult, blurredChoice]);
       }
+
     }
 
     listen(input, 'blur', onBlur);
