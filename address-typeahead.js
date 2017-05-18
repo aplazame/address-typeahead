@@ -363,13 +363,13 @@
       // debouncing predictions request for 400ms
         fetchingPredictions = false,
         debouncedPredictions = debounce(function (value, cb) {
-          if( predictionsCache[value] ) {
-            cb( predictionsCache[value] ); return;
-          }
+          // if( predictionsCache[value] ) {
+          //   cb( predictionsCache[value] ); return;
+          // }
           fetchingPredictions = true;
           places.getPredictions(value, function (results) {
             fetchingPredictions = false;
-            predictionsCache[value] = results;
+            // predictionsCache[value] = results;
             cb(results);
           }, function () {
             fetchingPredictions = false;
@@ -510,21 +510,22 @@
 
       if( !keepFocus ) hideWrapper();
 
-      if( !addressResult || !addressResult.address.street_number || (predictions[selectedCursor] && addressResult.place.id !== predictions[selectedCursor].id) ) {
-        places.getDetails(predictions[selectedCursor], function (details) {
-          blurredChoice = true;
-          onPlace(details);
-          if( addressResult ) {
-            input.value = address2Search( addressResult.address, true );
-            if( addressResult.address.street_number ) {
-              hideWrapper();
-            } else if( keepFocus ) {
-              focusAddressNumber();
-            }
-            emit('change', [addressResult, blurredChoice]);
-          }
-        });
-      } else if( addressResult && !fetchingPredictions ) {
+      // if( !addressResult || !addressResult.address.street_number || (predictions[selectedCursor] && addressResult.place.id !== predictions[selectedCursor].id) ) {
+      //   places.getDetails(predictions[selectedCursor], function (details) {
+      //     blurredChoice = true;
+      //     onPlace(details);
+      //     if( addressResult ) {
+      //       input.value = address2Search( addressResult.address, true );
+      //       if( addressResult.address.street_number ) {
+      //         hideWrapper();
+      //       } else if( keepFocus ) {
+      //         focusAddressNumber();
+      //       }
+      //       emit('change', [addressResult, blurredChoice]);
+      //     }
+      //   });
+      // } else
+      if( addressResult && !fetchingPredictions ) {
         blurredChoice = true;
         input.value = address2Search( addressResult.address, true );
         updateValidity();
@@ -557,10 +558,11 @@
       }
     }, true);
 
-    function fetchDetails () {
+    function fetchDetails (cb) {
       places.getDetails(predictions[selectedCursor], function (place) {
         onPlace(place, false);
         updateValidity();
+        if( cb instanceof Function ) cb();
       });
     }
 
@@ -580,6 +582,10 @@
         case 40:
           if( !predictionsWrapper.children.length ) return;
           e.preventDefault();
+          if( input.value != predictions[selectedCursor].description ) {
+            input.value = predictions[selectedCursor].description;
+            return;
+          }
           selectPrediction( selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0 );
           // input.value = predictions[selectedCursor].structured_formatting.main_text;
           input.value = predictions[selectedCursor].description;
@@ -622,8 +628,9 @@
 
     listen(input, 'focus', function () {
       if( waitingNumber() ) {
-        input.value = address2Search( addressResult.address, true );
-        focusAddressNumber();
+        // input.value = address2Search( addressResult.address, true );
+        // focusAddressNumber();
+        if( input.value === address2Search( addressResult.address, true ) ) focusAddressNumber();
         showWrapper();
         if( input.value !== fetchedValue ) onInput.call(input);
       } else if( predictions && predictions.length ) {

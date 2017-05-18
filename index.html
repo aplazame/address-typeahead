@@ -133,7 +133,7 @@
           },
           onPlace = function (place) {
             console.log('place', place);
-            document.querySelector('pre.code').innerHTML = place ? '---' : JSON.stringify(place, null, '  ');
+            document.querySelector('pre.code').innerHTML = place ? JSON.stringify(place, null, '  ') : '---';
           };
 
       inputStreet.value = localStorage.getItem('app-search') || '';
@@ -144,6 +144,7 @@
         }).bind('input[type=search]', '.typeahead-wrapper')
           .on('place', onPlace)
           .on('change', function (resultAddress, choosed ) {
+            this.setAttribute('validation-message', this.validationMessage );
             if( choosed ) validationMessage.textContent = this.validationMessage;
             else validationMessage.textContent = '';
           });
