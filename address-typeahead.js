@@ -558,9 +558,10 @@
       }
     }, true);
 
-    function fetchDetails (cb) {
+    function fetchDetails (updateInput, cb) {
       places.getDetails(predictions[selectedCursor], function (place) {
-        onPlace(place, false);
+        predictions[selectedCursor].$$details = place;
+        onPlace(place, updateInput == true );
         updateValidity();
         if( cb instanceof Function ) cb();
       });
@@ -576,20 +577,18 @@
           e.preventDefault();
           selectPrediction( selectedCursor >= 0 ? (selectedCursor > 0 ? (selectedCursor - 1) : 0) : cursorLastChild );
           // input.value = predictions[selectedCursor].structured_formatting.main_text;
-          input.value = predictions[selectedCursor].description;
-          fetchDetails();
+          // input.value = predictions[selectedCursor].description;
+          fetchDetails(true);
           break;
         case 40:
           if( !predictionsWrapper.children.length ) return;
           e.preventDefault();
-          if( input.value != predictions[selectedCursor].description ) {
-            input.value = predictions[selectedCursor].description;
-            return;
+          if( predictions[selectedCursor].$$details ) {
+            selectPrediction( selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0 );
           }
-          selectPrediction( selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0 );
           // input.value = predictions[selectedCursor].structured_formatting.main_text;
-          input.value = predictions[selectedCursor].description;
-          fetchDetails();
+          // input.value = predictions[selectedCursor].description;
+          fetchDetails(true);
           break;
         case 9:
           onBlur(null);
