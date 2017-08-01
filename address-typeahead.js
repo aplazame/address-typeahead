@@ -631,7 +631,7 @@
         showWrapper();
         if( input.value !== fetchedValue ) onInput.call(input);
       } else if( predictions && predictions.length ) {
-        if( addressResult ) input.value = addressResult.place.name;
+        if( addressResult ) input.value = addressResult.place.name + ' ';
         setTimeout(function () {
           input.setSelectionRange(input.value.length, input.value.length);
         }, 0);
