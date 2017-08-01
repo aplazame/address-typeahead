@@ -184,8 +184,8 @@
     return self;
   };
 
-  GooglePlaces.prototype.getDetails = function (prediction, cb, onError) {
-    this.placesService.getDetails(prediction, function (place, result) {
+  GooglePlaces.prototype.getDetails = function (request, cb, onError) {
+    this.placesService.getDetails(request, function (place, result) {
       if( result === 'OK' ) safeFn(cb)(place);
       else safeFn(onError)(result);
     });
@@ -479,7 +479,7 @@
 
         if( predictions.length ) {
           addressResult = currentAddress;
-          places.getDetails(predictions[selectedCursor], function (details) {
+          places.getDetails({placeId: predictions[selectedCursor].place_id}, function (details) {
             numberTyped = /^.*?, *\d+ *(,.*?)?$|^.*? \d+$/.test(value);
             onPlace(details, false);
             updateValidity();
