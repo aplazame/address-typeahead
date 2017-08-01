@@ -133,6 +133,10 @@
           },
           onPlace = function (place) {
             console.log('place', place);
+            // try{ throw new Error(); }catch(err){
+            //   console.log('place', place);
+            //   console.log('stack', err.stack);
+            // }
             document.querySelector('pre.code').innerHTML = place ? JSON.stringify(place, null, '  ') : '---';
           };
 

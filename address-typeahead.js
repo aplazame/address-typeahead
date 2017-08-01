@@ -13,10 +13,13 @@
   }
 }(this, function () {
 
+  var _now = Date.now || function () { return new Date().getTime(); };
+
   function createElement (nodeName, attrs, content) {
     attrs = attrs || {};
 
     var node = document.createElement(nodeName);
+
     for( var key in attrs ) node[key] = attrs[key];
 
     if( typeof content === 'string' ) node.innerHTML = content;
@@ -39,19 +42,30 @@
     return dest;
   }
 
-  function debounce (fn, duration) {
-    duration = duration || 200;
-    var sec = 0;
+  function debounce (fn, debounce_duration) {
+    var debouncing = null,
+        last_hit = _now(),
+        runHit = function (_this, _args) {
+          fn.apply(_this, _args);
+          last_hit = _now();
+          debouncing = setTimeout(function () {
+            debouncing = null;
+          }, debounce_duration);
+        };
+    debounce_duration = debounce_duration || 80;
 
     return function () {
-      var thisArg = this, args = arguments, n = ++sec;
+      var _this = this, _args = arguments;
 
-      setTimeout(function () {
-        if( n !== sec ) return;
-        fn.apply(thisArg, args);
-      }, duration);
+      if( !debouncing || _now() - last_hit > debounce_duration ) {
+        runHit(_this, _args);
+      } else {
+        clearTimeout(debouncing);
+        debouncing = setTimeout(function () {
+          runHit(_this, _args);
+        }, debounce_duration);
+      }
     };
-
   }
 
   function serialize (o, nested) {
@@ -184,8 +198,9 @@
     return self;
   };
 
-  GooglePlaces.prototype.getDetails = function (request, cb, onError) {
-    this.placesService.getDetails(request, function (place, result) {
+  GooglePlaces.prototype.getDetails = function (place_id, cb, onError) {
+    var params = typeof place_id === 'string' ? { placeId: place_id } : ( place_id.place_id ? {placeId: place_id.place_id} : place_id );
+    this.placesService.getDetails(params, function (place, result) {
       if( result === 'OK' ) safeFn(cb)(place);
       else safeFn(onError)(result);
     });
@@ -479,7 +494,7 @@
 
         if( predictions.length ) {
           addressResult = currentAddress;
-          places.getDetails({placeId: predictions[selectedCursor].place_id}, function (details) {
+          places.getDetails(predictions[selectedCursor], function (details) {
             numberTyped = /^.*?, *\d+ *(,.*?)?$|^.*? \d+$/.test(value);
             onPlace(details, false);
             updateValidity();
@@ -510,21 +525,6 @@
 
       if( !keepFocus ) hideWrapper();
 
-      // if( !addressResult || !addressResult.address.street_number || (predictions[selectedCursor] && addressResult.place.id !== predictions[selectedCursor].id) ) {
-      //   places.getDetails(predictions[selectedCursor], function (details) {
-      //     blurredChoice = true;
-      //     onPlace(details);
-      //     if( addressResult ) {
-      //       input.value = address2Search( addressResult.address, true );
-      //       if( addressResult.address.street_number ) {
-      //         hideWrapper();
-      //       } else if( keepFocus ) {
-      //         focusAddressNumber();
-      //       }
-      //       emit('change', [addressResult, blurredChoice]);
-      //     }
-      //   });
-      // } else
       if( addressResult && !fetchingPredictions ) {
         blurredChoice = true;
         input.value = address2Search( addressResult.address, true );
@@ -576,8 +576,6 @@
           if( !predictionsWrapper.children.length ) return;
           e.preventDefault();
           selectPrediction( selectedCursor >= 0 ? (selectedCursor > 0 ? (selectedCursor - 1) : 0) : cursorLastChild );
-          // input.value = predictions[selectedCursor].structured_formatting.main_text;
-          // input.value = predictions[selectedCursor].description;
           fetchDetails(true);
           break;
         case 40:
@@ -586,8 +584,6 @@
           if( predictions[selectedCursor].$$details ) {
             selectPrediction( selectedCursor >= 0 ? (selectedCursor < cursorLastChild ? (selectedCursor + 1) : selectedCursor) : 0 );
           }
-          // input.value = predictions[selectedCursor].structured_formatting.main_text;
-          // input.value = predictions[selectedCursor].description;
           fetchDetails(true);
           break;
         case 9:
@@ -627,8 +623,6 @@
 
     listen(input, 'focus', function () {
       if( waitingNumber() ) {
-        // input.value = address2Search( addressResult.address, true );
-        // focusAddressNumber();
         if( input.value === address2Search( addressResult.address, true ) ) focusAddressNumber();
         showWrapper();
         if( input.value !== fetchedValue ) onInput.call(input);
