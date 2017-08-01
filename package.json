@@ -1,6 +1,6 @@
 {
   "name": "address-typeahead",
-  "version": "1.1.45",
+  "version": "1.1.46",
   "description": "",
   "main": "address-typeahead.js",
   "scripts": {
