@@ -328,6 +328,8 @@
       // matched address
         addressResult = null,
 
+        last_input_value = '',
+
       // renders loaded predictions
         selectPrediction = function (cursor) {
 
@@ -378,13 +380,9 @@
       // debouncing predictions request for 400ms
         fetchingPredictions = false,
         debouncedPredictions = debounce(function (value, cb) {
-          // if( predictionsCache[value] ) {
-          //   cb( predictionsCache[value] ); return;
-          // }
           fetchingPredictions = true;
           places.getPredictions(value, function (results) {
             fetchingPredictions = false;
-            // predictionsCache[value] = results;
             cb(results);
           }, function () {
             fetchingPredictions = false;
@@ -474,6 +472,8 @@
     function onInput (_e) {
       var value = input.value, currentAddress = addressResult;
 
+      last_input_value = value;
+
       if( !value ) {
         addressResult = null;
         predictions.splice(0, predictions.length);
@@ -527,7 +527,11 @@
 
       if( addressResult && !fetchingPredictions ) {
         blurredChoice = true;
-        input.value = address2Search( addressResult.address, true );
+        var input_value = address2Search( addressResult.address, true );
+
+        if( addressResult.place.name && addressResult.place.name ) fetchResults(addressResult.place.name);
+        // fetchResults(last_input_value);
+        input.value = input_value;
         updateValidity();
         emit('change', [addressResult, blurredChoice]);
         hideWrapper();
@@ -628,6 +632,9 @@
         if( input.value !== fetchedValue ) onInput.call(input);
       } else if( predictions && predictions.length ) {
         if( addressResult ) input.value = addressResult.place.name;
+        setTimeout(function () {
+          input.setSelectionRange(input.value.length, input.value.length);
+        }, 0);
         showWrapper();
       } else if( input.value ) {
         onInput.call(input);
