@@ -309,11 +309,14 @@
           ( wrapperParent ? ( typeof wrapperParent === 'string' ? document.querySelector(wrapperParent) : wrapperParent ) : document.body ).appendChild(wrapper);
           return wrapper;
         })(),
+        clear_style = /; *Trident\//.test(navigator.userAgent) ? '' : null,
         showWrapper = function () {
-          wrapper.style.display = null;
+          wrapper.style.display = clear_style;
+          console.log('showWrapper', wrapper, wrapper.style.display );
         },
         hideWrapper = function () {
           wrapper.style.display = 'none';
+          console.log('hideWrapper', wrapper, wrapper.style.display );
           emit('blur', [addressResult, blurredChoice]);
         },
 
@@ -328,7 +331,7 @@
       // matched address
         addressResult = null,
 
-        last_input_value = '',
+        // last_input_value = '',
 
       // renders loaded predictions
         selectPrediction = function (cursor) {
@@ -472,7 +475,7 @@
     function onInput (_e) {
       var value = input.value, currentAddress = addressResult;
 
-      last_input_value = value;
+      // last_input_value = value;
 
       if( !value ) {
         addressResult = null;
@@ -643,7 +646,7 @@
 
     listen(input, 'click', function () {
       if( waitingNumber() ) focusAddressNumber();
-      else if( wrapper.style.display === null && addressResult ) input.value = addressResult.place.name;
+      else if( wrapper.style.display === clear_style && addressResult ) input.value = addressResult.place.name;
       if( input.value ) showWrapper();
     });
 
