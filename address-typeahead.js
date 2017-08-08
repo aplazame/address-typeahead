@@ -312,11 +312,9 @@
         clear_style = /; *Trident\//.test(navigator.userAgent) ? '' : null,
         showWrapper = function () {
           wrapper.style.display = clear_style;
-          console.log('showWrapper', wrapper, wrapper.style.display );
         },
         hideWrapper = function () {
           wrapper.style.display = 'none';
-          console.log('hideWrapper', wrapper, wrapper.style.display );
           emit('blur', [addressResult, blurredChoice]);
         },
 
