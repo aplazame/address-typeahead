@@ -496,6 +496,8 @@
 
       fetching_value = value;
       fetchResults(value, function () {
+        fetching_value = null;
+
         if( last_value === null || value !== last_value ) {
           selectPrediction(predictions.length ? 0 : -1);
           last_value = value;
@@ -670,8 +672,10 @@
       }
 
       fetchResults(try_search, function () {
-        if( predictions.length ) input.value = try_search;
-        else trySearches();
+        if( predictions.length ) {
+          input.value = try_search;
+          onInput.call(input);
+        } else trySearches();
       });
     }
 
