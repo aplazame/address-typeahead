@@ -673,8 +673,13 @@
 
       fetchResults(try_search, function () {
         if( predictions.length ) {
-          input.value = try_search;
-          onInput.call(input);
+          selectedCursor = 0;
+          places.getDetails(predictions[selectedCursor], function (details) {
+            input.value = try_search;
+            numberTyped = /^.*?, *\d+ *(,.*?)?$|^.*? \d+$/.test(try_search);
+            onPlace(details, false);
+            updateValidity();
+          });
         } else trySearches();
       });
     }
