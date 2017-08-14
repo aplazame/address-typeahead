@@ -129,7 +129,7 @@
 
   // --------------------------------------------------------------------------
 
-  var isAndroid = typeof navigator !== 'undefined' && navigator.userAgent.indexOf('Android') !== -1;
+  var is_android = typeof navigator !== 'undefined' && navigator.userAgent.indexOf('Android') !== -1;
 
   function GooglePlaces (key, config) {
     this.key = key;
@@ -270,9 +270,11 @@
 
   AddressTypeahead.GooglePlaces = GooglePlaces;
 
-  AddressTypeahead.prototype.bind = function (input, wrapperParent) {
+  AddressTypeahead.prototype.bind = function (input, wrapperParent, options) {
     input = typeof input === 'string' ? document.querySelector(input) : input;
     this.input = input;
+
+    options = options || {};
 
     var ta = this,
       // google object
@@ -346,12 +348,8 @@
           selectedCursor = cursor >= 0 ? cursor : -1;
         },
 
-        renderPredictions = function (_predictions, beforeRender, afterRender) {
+        renderPredictions = function (afterRender) {
           var i, n, children = predictionsWrapper.children;
-
-          predictions = _predictions;
-
-          safeFn(beforeRender)();
 
           // wrapper.style.display = null;
 
@@ -401,27 +399,34 @@
             // var sec = ++numDebounced;
             addClass(wrapper, 'js-typeahead-loading');
             debouncedPredictions(value, function (results) {
+
               if( results === null ) {
                 addressResult = undefined;
                 predictions.splice(0, predictions.length);
                 updateValidity();
                 emit('place', [null]);
                 emit('change', [addressResult, blurredChoice]);
+                safeFn(beforeRender)();
+                if( !skipRender ) renderPredictions(afterRender);
                 return;
               }
 
               // if( sec !== numDebounced ) return;
               removeClass(wrapper, 'js-typeahead-loading');
               predictionsCache[value] = results;
-              if( !skipRender ) renderPredictions(results, beforeRender, afterRender);
+              predictions = results;
+
+              safeFn(beforeRender)();
+              if( !skipRender ) renderPredictions(afterRender);
             });
           } else {
-            if( !skipRender ) renderPredictions([], beforeRender, afterRender);
+            predictions = [];
+            safeFn(beforeRender)();
+            if( !skipRender ) renderPredictions(afterRender);
           }
         },
 
         numberTyped = false,
-        fetchedValue = '',
         blurredChoice = false,
 
         updateValidity = function () {
@@ -454,7 +459,8 @@
         },
 
       // last fetched value
-        lastValue = null;
+        last_value = null,
+        fetching_value = last_value;
 
 
     function waitingNumber () {
@@ -473,6 +479,8 @@
     function onInput (_e) {
       var value = input.value, currentAddress = addressResult;
 
+      if( value === fetching_value ) return;
+
       // last_input_value = value;
 
       if( !value ) {
@@ -486,11 +494,11 @@
 
       updateValidity();
 
-      fetchedValue = value;
+      fetching_value = value;
       fetchResults(value, function () {
-        if( lastValue === null || value !== lastValue ) {
+        if( last_value === null || value !== last_value ) {
           selectPrediction(predictions.length ? 0 : -1);
-          lastValue = value;
+          last_value = value;
         }
 
         if( predictions.length ) {
@@ -502,6 +510,9 @@
             // emit('change', [addressResult]);
           });
         } else {
+          if( _e === null && options.clear_first_mismatch ) {
+            input.value = '';
+          }
           addressResult = null;
           updateValidity();
           emit('place', [null]);
@@ -516,9 +527,9 @@
       onInput.call(input);
     };
 
-    listen(input, isAndroid ? 'keyup' : 'input', onInput);
+    listen(input, is_android ? 'keyup' : 'input', onInput);
     hideWrapper();
-    onInput.call(input);
+    onInput.call(input, null);
     on('update-validity', updateValidity);
 
     function onBlur (_e, keepFocus) {
@@ -630,7 +641,7 @@
       if( waitingNumber() ) {
         if( input.value === address2Search( addressResult.address, true ) ) focusAddressNumber();
         showWrapper();
-        if( input.value !== fetchedValue ) onInput.call(input);
+        if( input.value !== fetching_value ) onInput.call(input);
       } else if( predictions && predictions.length ) {
         if( addressResult ) input.value = addressResult.place.name + ' ';
         setTimeout(function () {

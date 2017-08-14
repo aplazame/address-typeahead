@@ -145,7 +145,7 @@
       if( appKey ) {
         ta = new AddressTypeahead('google', appKey, {
           google: googleConfig, messages: messages
-        }).bind('input[type=search]', '.typeahead-wrapper')
+        }).bind('input[type=search]', '.typeahead-wrapper', { clear_first_mismatch: true })
           .on('place', onPlace)
           .on('change', function (resultAddress, choosed ) {
             this.setAttribute('validation-message', this.validationMessage );
