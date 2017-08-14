@@ -659,6 +659,24 @@
       if( input.value ) showWrapper();
     });
 
+    var try_searches = options.try_searches || [];
+
+    function trySearches () {
+      var try_search = try_searches.shift();
+
+      if( !try_search ) {
+        predictions = [];
+        return;
+      }
+
+      fetchResults(try_search, function () {
+        if( predictions.length ) input.value = try_search;
+        else trySearches();
+      });
+    }
+
+    trySearches();
+
     return autocomplete;
   };
 
