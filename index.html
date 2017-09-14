@@ -70,13 +70,13 @@
         border-top: 1px solid #ddd;
       }
 
-      .typeahead-predictions > .typeahead-license {
+      .typeahead-predictions > .typeahead-footer {
         padding: 4px;
         text-align: right;
         border-top: 1px solid #eee;
       }
 
-      .typeahead-predictions > .typeahead-license img {
+      .typeahead-predictions > .typeahead-footer img.google-license {
         vertical-align: middle;
         width: 120px;
       }
@@ -144,7 +144,12 @@
 
       if( appKey ) {
         ta = new AddressTypeahead('google', appKey, {
-          google: googleConfig, messages: messages
+          google: googleConfig,
+          messages: messages,
+          custom_address_link: 'Añadir Manualmente',
+          getCustomAddress: function () {
+            window.alert('ahahahah');
+          }
         }).bind('input[type=search]', '.typeahead-wrapper', { try_searches: ['nuñez de balboa, 120'] })
           .on('place', onPlace)
           .on('change', function (resultAddress, choosed ) {

@@ -206,7 +206,7 @@
     });
   };
 
-  GooglePlaces.prototype.licenseHTML = '<img src="https://developers.google.com/places/documentation/images/powered-by-google-on-white.png?hl=es-419"/>';
+  GooglePlaces.prototype.licenseHTML = '<img class="google-license" src="https://developers.google.com/places/documentation/images/powered-by-google-on-white.png?hl=es-419"/>';
 
   GooglePlaces.prototype.getPredictionHTML = function (prediction) {
     var cursor = 0, src = prediction.description, result = '', from, len;
@@ -301,12 +301,24 @@
           input: input,
         },
 
-    // DOM nodes
+      // DOM nodes
         predictionsWrapper = createElement('div', { className: 'predictions' }),
+        manual_address_link = createElement('a', { className: 'custom-address-link' }, options.custom_address_link),
         wrapper = (function () {
           var wrapper = createElement('div', { className: 'typeahead-predictions' }, [
-            predictionsWrapper, createElement('div', { className: 'typeahead-license' }, places.licenseHTML)
+            predictionsWrapper, createElement('div', { className: 'typeahead-footer' }, options.custom_address_link ? [
+              manual_address_link,
+              places.licenseHTML
+            ] : [places.licenseHTML])
           ]);
+
+          if( options.custom_address_link ) {
+            listen(manual_address_link, 'mousedown', function () {
+              options.getCustomAddress(function (custom_address) {
+                onPlace({ custom: custom_address });
+              });
+            });
+          }
 
           ( wrapperParent ? ( typeof wrapperParent === 'string' ? document.querySelector(wrapperParent) : wrapperParent ) : document.body ).appendChild(wrapper);
           return wrapper;
@@ -443,7 +455,8 @@
 
       // when a place is choosed
         onPlace = function (place, updateInput) {
-          addressResult = place && ta.parsePlace(place, predictions[selectedCursor]);
+          if( !place ) return;
+          addressResult = place.custom ? { address: place.custom, custom: true } : ta.parsePlace(place, predictions[selectedCursor]);
 
           if( addressResult && updateInput !== false ) {
             input.value = address2Search( addressResult.address, true );
