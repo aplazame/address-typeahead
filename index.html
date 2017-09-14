@@ -81,6 +81,51 @@
         width: 120px;
       }
 
+      #custom-address-form {
+        display: block; position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4);
+        text-align: center;
+      }
+      #custom-address-form::before {
+        display: inline-block;
+        vertical-align: top;
+      }
+      #custom-address-form .modal {
+        display: inline-block;
+        margin: 64px 0;
+        width: 100%;
+        max-width: 400px;
+        text-align: left;
+        background: whitesmoke;
+        padding: 16px;
+      }
+
+      #custom-address-form label, #custom-address-form input {
+        display: block;
+      }
+
+      #custom-address-form label + label {
+        margin-top: 8px;
+      }
+
+      #custom-address-form input {
+        width: 100%;
+        height: 40px;
+        padding: 0 8px;
+      }
+
+      #custom-address-form .submit-wrapper {
+        text-align: center;
+        margin-top: 16px;
+      }
+
+      #custom-address-form .submit-wrapper button {
+        height: 40px;
+        padding: 0 8px;
+        width: 100%;
+      }
+
     </style>
 
     <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
@@ -101,6 +146,38 @@
         </form>
         <div class="typeahead-wrapper"></div>
         <pre class="code"></pre>
+
+        <form id="custom-address-form" style="display: none">
+          <div class="modal">
+            <label class="input-wrapper">
+              <div>Calle</div>
+              <input name="street" required></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Número</div>
+              <input name="street_number" pattern="\d+" required></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Código postal</div>
+              <input name="postcode" pattern="\d{5}" required></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Localidad</div>
+              <input name="locality" required></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Ciudad</div>
+              <input name="city" required></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Estado</div>
+              <input name="state" required></input>
+            </label>
+            <div class="submit-wrapper">
+              <button type="submit">Añadir</button>
+            </div>
+          </div>
+        </form>
       </div>
     </main>
     <script>
@@ -144,13 +221,27 @@
 
       if( appKey ) {
         ta = new AddressTypeahead('google', appKey, {
-          google: googleConfig,
-          messages: messages,
-          custom_address_link: 'Añadir Manualmente',
-          getCustomAddress: function () {
-            window.alert('ahahahah');
-          }
-        }).bind('input[type=search]', '.typeahead-wrapper', { try_searches: ['nuñez de balboa, 120'] })
+          google: googleConfig, messages: messages,
+        }).bind('input[type=search]', '.typeahead-wrapper', {
+            try_searches: ['nuñez de balboa, 120'],
+            custom_address_link: 'Añadir Manualmente',
+            getCustomAddress: function () {
+              var form = document.getElementById('custom-address-form'),
+                  modal = form.querySelector('.modal'),
+                  preventClose = function (e) {
+                    e.stopPropagation();
+                  },
+                  closeForm = function () {
+                    modal.removeEventListener('click', preventClose);
+                    form.removeEventListener('click', closeForm);
+                    form.style.display = 'none';
+                  };
+              form.style.display = '';
+
+              modal.addEventListener('click', preventClose);
+              form.addEventListener('click', closeForm);
+            }
+          })
           .on('place', onPlace)
           .on('change', function (resultAddress, choosed ) {
             this.setAttribute('validation-message', this.validationMessage );

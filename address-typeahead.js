@@ -276,6 +276,8 @@
 
     options = options || {};
 
+    console.log('options', options);
+
     var ta = this,
       // google object
         places = this.places,
