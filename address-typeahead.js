@@ -125,6 +125,11 @@
       el.classList.remove(className);
     } : function (el, className) {
       el.className = el.className.replace(new RegExp('\\s*' + className + '\\s*','g'), ' ');
+    },
+    toggleClass = function (el, className, present) {
+      present = present === undefined ? !hasClass(el, className) : present;
+
+      (present ? addClass : removeClass)( el, className );
     };
 
   // --------------------------------------------------------------------------
@@ -210,6 +215,8 @@
 
   GooglePlaces.prototype.getPredictionHTML = function (prediction) {
     var cursor = 0, src = prediction.description, result = '', from, len;
+
+    if( prediction.custom ) return address2Search(prediction.address, prediction.address.street_number);
 
     for( var i = 0, n = prediction.matched_substrings.length; i < n ; i++ ) {
       from = prediction.matched_substrings[i].offset;
@@ -336,6 +343,7 @@
 
       // loaded predictions
         predictions = [],
+        custom_predictions = [],
       // saving Google API requests
         predictionsCache = {},
 
@@ -363,24 +371,25 @@
         },
 
         renderPredictions = function (afterRender) {
-          var i, n, children = predictionsWrapper.children;
+          var i, n, children = predictionsWrapper.children, _predictions = custom_predictions.length ? predictions.concat(custom_predictions) : predictions;
 
           // wrapper.style.display = null;
 
-          if( predictions.length > children.length ) {
-            for( i = 0, n = predictions.length - children.length ; i < n ; i++ ) {
+          if( _predictions.length > children.length ) {
+            for( i = 0, n = _predictions.length - children.length ; i < n ; i++ ) {
               predictionsWrapper.appendChild( createElement('div', { className: 'prediction' }) );
             }
           }
 
-          for( i = 0, n = predictions.length; i < n ; i++ ) {
-            children[i].innerHTML = places.getPredictionHTML(predictions[i]);
+          for( i = 0, n = _predictions.length; i < n ; i++ ) {
+            children[i].innerHTML = places.getPredictionHTML(_predictions[i]);
+            toggleClass(children[i], 'custom-address', _predictions[i].custom );
           }
           selectPrediction(selectedCursor);
 
-          if( predictions.length < children.length ) {
-            while( children[predictions.length] ) {
-              predictionsWrapper.removeChild(children[predictions.length]);
+          if( _predictions.length < children.length ) {
+            while( children[_predictions.length] ) {
+              predictionsWrapper.removeChild(children[_predictions.length]);
             }
           }
 
@@ -447,6 +456,7 @@
           if( input.getAttribute('required') !== null && (!input.value || !addressResult) ) {
             input.setCustomValidity( ( input.value && addressResult === undefined ) ? ta.messages.make_choice : ta.messages.required );
             hideWrapper();
+            console.log('change', [addressResult, blurredChoice]);
             emit('change', [addressResult, blurredChoice]);
             return;
           }
@@ -458,7 +468,22 @@
       // when a place is choosed
         onPlace = function (place, updateInput) {
           if( !place ) return;
-          addressResult = place.custom ? { address: place.custom, custom: true } : ta.parsePlace(place, predictions[selectedCursor]);
+
+          if( custom_predictions.indexOf(place) >= 0 ) {
+            addressResult = place;
+          } else {
+            addressResult = place.custom ? { address: place.custom, custom: true } : ta.parsePlace(place, predictions[selectedCursor]);
+
+            if( addressResult && addressResult.custom ) {
+              custom_predictions.push(addressResult);
+              predictions = [];
+              blurredChoice = false;
+              fetchingPredictions = false;
+              renderPredictions(function () {
+                selectPrediction(custom_predictions.length - 1);
+              });
+            }
+          }
 
           if( addressResult && updateInput !== false ) {
             input.value = address2Search( addressResult.address, true );
@@ -550,15 +575,16 @@
     on('update-validity', updateValidity);
 
     function onBlur (_e, keepFocus) {
-      if( !input.value || !predictions[selectedCursor] || fetchingPredictions ) return;
+      if( !input.value || ( !predictions[selectedCursor] && !custom_predictions[selectedCursor - predictions.length] ) || fetchingPredictions ) return;
 
       if( !keepFocus ) hideWrapper();
+
 
       if( addressResult && !fetchingPredictions ) {
         blurredChoice = true;
         var input_value = address2Search( addressResult.address, true );
 
-        if( addressResult.place.name && addressResult.place.name ) fetchResults(addressResult.place.name);
+        if( addressResult.place && addressResult.place.name ) fetchResults(addressResult.place.name);
         // fetchResults(last_input_value);
         input.value = input_value;
         updateValidity();
@@ -577,13 +603,17 @@
         if( hasClass(el, 'prediction') ) {
           cursor = getIndex(predictionsWrapper.children, el);
         } else if( el === predictionsWrapper ) {
+          selectPrediction(cursor);
           if( cursor >= 0 ) {
-            selectPrediction(cursor);
-            places.getDetails(predictions[cursor], function (details) {
-              onPlace(details);
-              if( !waitingNumber() ) input.blur();
-              else input.focus();
-            });
+            if( cursor < predictions.length ) {
+              places.getDetails(predictions[cursor], function (details) {
+                onPlace(details);
+                if( !waitingNumber() ) input.blur();
+                else input.focus();
+              });
+            } else {
+              onPlace(custom_predictions[cursor - predictions.length]);
+            }
           }
           break;
         }
@@ -660,10 +690,13 @@
         showWrapper();
         if( input.value !== fetching_value ) onInput.call(input);
       } else if( predictions && predictions.length ) {
-        if( addressResult ) input.value = addressResult.place.name + ' ';
+        if( addressResult ) input.value = addressResult.custom ? address2Search(addressResult.address, addressResult.address.street_number) : (addressResult.place.name + ' ');
         setTimeout(function () {
           input.setSelectionRange(input.value.length, input.value.length);
         }, 0);
+        showWrapper();
+      } else if( addressResult && addressResult.custom ) {
+        if( addressResult ) input.value = address2Search(addressResult.address, addressResult.address.street_number);
         showWrapper();
       } else if( input.value ) {
         onInput.call(input);

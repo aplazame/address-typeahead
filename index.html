@@ -151,27 +151,27 @@
           <div class="modal">
             <label class="input-wrapper">
               <div>Calle</div>
-              <input name="street" required></input>
+              <input name="street" required value="Evergreen Terrace"></input>
             </label>
             <label class="input-wrapper">
               <div>Número</div>
-              <input name="street_number" pattern="\d+" required></input>
+              <input name="street_number" pattern="\d+" required value="742"></input>
             </label>
             <label class="input-wrapper">
               <div>Código postal</div>
-              <input name="postcode" pattern="\d{5}" required></input>
+              <input name="postcode" pattern="\d{5}" required value="12345"></input>
             </label>
             <label class="input-wrapper">
               <div>Localidad</div>
-              <input name="locality" required></input>
+              <input name="locality" required value="Springfield"></input>
             </label>
             <label class="input-wrapper">
               <div>Ciudad</div>
-              <input name="city" required></input>
+              <input name="city" required value="Springfield"></input>
             </label>
             <label class="input-wrapper">
               <div>Estado</div>
-              <input name="state" required></input>
+              <input name="state" required value="Takoma del Norte"></input>
             </label>
             <div class="submit-wrapper">
               <button type="submit">Añadir</button>
@@ -249,6 +249,7 @@
                   closeForm = function () {
                     modal.removeEventListener('click', preventClose);
                     form.removeEventListener('click', closeForm);
+                    form.removeEventListener('submit', onSubmit);
                     form.style.display = 'none';
                   },
                   onSubmit = function (e) {
@@ -271,6 +272,8 @@
             this.setAttribute('validation-message', this.validationMessage );
             if( choosed ) validationMessage.textContent = this.validationMessage;
             else validationMessage.textContent = '';
+
+            localStorage.setItem('app-search', this.value);
           });
         inputKey.value = appKey;
       }
@@ -284,9 +287,9 @@
         }).bind('input[type=search]', '.typeahead-wrapper').on('place', onPlace);
       });
 
-      inputStreet.addEventListener('input', function () {
-        localStorage.setItem('app-search', this.value);
-      });
+      // inputStreet.addEventListener('input', function () {
+      //   localStorage.setItem('app-search', this.value);
+      // });
     </script>
   </body>
 </html>
