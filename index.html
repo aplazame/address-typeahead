@@ -215,6 +215,21 @@
             //   console.log('stack', err.stack);
             // }
             document.querySelector('pre.code').innerHTML = place ? JSON.stringify(place, null, '  ') : '---';
+          },
+          formParams = function (form) {
+            if( !(form instanceof Element) && form.length ) form = form[0];
+
+            var data = {};
+            [].forEach.call(form.elements, function (el) {
+              if( el.name && !el.disabled ) {
+                if( el.type === 'radio' ) {
+                  if( el.checked ) data[el.name] = el.value;
+                } else {
+                  data[el.name] = el.value;
+                }
+              }
+            });
+            return data;
           };
 
       inputStreet.value = localStorage.getItem('app-search') || '';
@@ -225,7 +240,7 @@
         }).bind('input[type=search]', '.typeahead-wrapper', {
             try_searches: ['nuñez de balboa, 120'],
             custom_address_link: 'Añadir Manualmente',
-            getCustomAddress: function () {
+            getCustomAddress: function (resolve, reject) {
               var form = document.getElementById('custom-address-form'),
                   modal = form.querySelector('.modal'),
                   preventClose = function (e) {
@@ -235,11 +250,20 @@
                     modal.removeEventListener('click', preventClose);
                     form.removeEventListener('click', closeForm);
                     form.style.display = 'none';
+                  },
+                  onSubmit = function (e) {
+                    e.preventDefault();
+                    var data = formParams(form);
+                    data.street_number = Number(data.street_number);
+                    console.log('onSubmit', data );
+                    resolve(data);
+                    closeForm();
                   };
               form.style.display = '';
 
               modal.addEventListener('click', preventClose);
               form.addEventListener('click', closeForm);
+              form.addEventListener('submit', onSubmit);
             }
           })
           .on('place', onPlace)
