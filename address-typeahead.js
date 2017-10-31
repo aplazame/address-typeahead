@@ -254,8 +254,8 @@
       country: fields.country,
     };
 
-    address.address_formatted = place.formatted_address || formattedAddress(address);
-    address.url = place.url || ( 'https://maps.google.com/?q=' + encodeURIComponent(address.address_formatted) );
+    address.formatted_address = place.formatted_address || formattedAddress(address);
+    address.url = place.url || ( 'https://maps.google.com/?q=' + encodeURIComponent(address.formatted_address) );
 
     return {
       address: address,
