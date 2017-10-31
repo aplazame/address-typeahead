@@ -484,8 +484,8 @@
             addressResult = place.custom ? { address: place.custom, custom: true } : ta.parsePlace(place, predictions[selectedCursor]);
 
             if( place.custom ) {
-              addressResult.address.address_formatted = formattedAddress(addressResult.address);
-              addressResult.address.url = 'https://maps.google.com/?q=' + encodeURIComponent(addressResult.address_formatted);
+              addressResult.address.formatted_address = formattedAddress(addressResult.address);
+              addressResult.address.url = 'https://maps.google.com/?q=' + encodeURIComponent(addressResult.formatted_address);
             }
 
             if( addressResult && addressResult.custom ) {
