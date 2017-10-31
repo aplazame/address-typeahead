@@ -98,6 +98,11 @@
     return address.street + ( commaIf(address.street_number) || (numberPlaceholder ? ', ' : '') ) + commaIf(areaName !== address.street && areaName);
   }
 
+  function formattedAddress (address) {
+    if( !address ) return '';
+    return address.street + commaIf(address.street_number) + commaIf( address.postcode + ' ' + address.locality ) + commaIf( address.province ) + commaIf( address.state ) + commaIf( address.country );
+  }
+
   var listen = document.documentElement.addEventListener ? function(element, eventName, listener, useCapture) {
       return element.addEventListener(eventName, listener, useCapture);
     } : function(element, eventName, listener, useCapture) {
@@ -240,13 +245,17 @@
 
     var address = {
       street: fields.route || place.name || '',
-      street_number: fields.street_number,
+      street_number: Number(fields.street_number),
       postcode: fields.postal_code || '',
       locality: fields.locality,
       sublocality: fields.sublocality_level_1,
-      city: fields.administrative_area_level_2,
-      state: fields.administrative_area_level_1
+      province: fields.administrative_area_level_2,
+      state: fields.administrative_area_level_1,
+      country: fields.country,
     };
+
+    address.address_formatted = place.formatted_address || formattedAddress(address);
+    address.url = place.url || ( 'https://maps.google.com/?q=' + encodeURIComponent(address.address_formatted) );
 
     return {
       address: address,
@@ -473,6 +482,11 @@
             addressResult = place;
           } else {
             addressResult = place.custom ? { address: place.custom, custom: true } : ta.parsePlace(place, predictions[selectedCursor]);
+
+            if( place.custom ) {
+              addressResult.address.address_formatted = formattedAddress(addressResult.address);
+              addressResult.address.url = 'https://maps.google.com/?q=' + encodeURIComponent(addressResult.address_formatted);
+            }
 
             if( addressResult && addressResult.custom ) {
               custom_predictions.push(addressResult);

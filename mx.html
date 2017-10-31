@@ -70,15 +70,60 @@
         border-top: 1px solid #ddd;
       }
 
-      .typeahead-predictions > .typeahead-license {
+      .typeahead-predictions > .typeahead-footer {
         padding: 4px;
         text-align: right;
         border-top: 1px solid #eee;
       }
 
-      .typeahead-predictions > .typeahead-license img {
+      .typeahead-predictions > .typeahead-footer img.google-license {
         vertical-align: middle;
         width: 120px;
+      }
+
+      #custom-address-form {
+        display: block; position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4);
+        text-align: center;
+      }
+      #custom-address-form::before {
+        display: inline-block;
+        vertical-align: top;
+      }
+      #custom-address-form .modal {
+        display: inline-block;
+        margin: 64px 0;
+        width: 100%;
+        max-width: 400px;
+        text-align: left;
+        background: whitesmoke;
+        padding: 16px;
+      }
+
+      #custom-address-form label, #custom-address-form input {
+        display: block;
+      }
+
+      #custom-address-form label + label {
+        margin-top: 8px;
+      }
+
+      #custom-address-form input {
+        width: 100%;
+        height: 40px;
+        padding: 0 8px;
+      }
+
+      #custom-address-form .submit-wrapper {
+        text-align: center;
+        margin-top: 16px;
+      }
+
+      #custom-address-form .submit-wrapper button {
+        height: 40px;
+        padding: 0 8px;
+        width: 100%;
       }
 
     </style>
@@ -101,6 +146,38 @@
         </form>
         <div class="typeahead-wrapper"></div>
         <pre class="code"></pre>
+
+        <form id="custom-address-form" style="display: none">
+          <div class="modal">
+            <label class="input-wrapper">
+              <div>Calle</div>
+              <input name="street" required value="Evergreen Terrace"></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Número</div>
+              <input name="street_number" pattern="\d+" required value="742"></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Código postal</div>
+              <input name="postcode" pattern="\d{5}" required value="12345"></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Localidad</div>
+              <input name="locality" required value="Springfield"></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Ciudad</div>
+              <input name="province" required value="Springfield"></input>
+            </label>
+            <label class="input-wrapper">
+              <div>Estado</div>
+              <input name="state" required value="Takoma del Norte"></input>
+            </label>
+            <div class="submit-wrapper">
+              <button type="submit">Añadir</button>
+            </div>
+          </div>
+        </form>
       </div>
     </main>
     <script>
@@ -131,19 +208,72 @@
           messages = {
             number_missing: 'Falta el número de la dirección'
           },
-          onValidresult = function (result) {
-            document.querySelector('pre.code').innerHTML = JSON.stringify(result, null, '  ');
+          onPlace = function (place) {
+            console.log('place', place);
+            // try{ throw new Error(); }catch(err){
+            //   console.log('place', place);
+            //   console.log('stack', err.stack);
+            // }
+            document.querySelector('pre.code').innerHTML = place ? JSON.stringify(place, null, '  ') : '---';
+          },
+          formParams = function (form) {
+            if( !(form instanceof Element) && form.length ) form = form[0];
+
+            var data = {};
+            [].forEach.call(form.elements, function (el) {
+              if( el.name && !el.disabled ) {
+                if( el.type === 'radio' ) {
+                  if( el.checked ) data[el.name] = el.value;
+                } else {
+                  data[el.name] = el.value;
+                }
+              }
+            });
+            return data;
           };
 
       inputStreet.value = localStorage.getItem('app-search') || '';
 
       if( appKey ) {
         ta = new AddressTypeahead('google', appKey, {
-          google: googleConfig, messages: messages
-        }).bind('input[type=search]', '.typeahead-wrapper')
-          .on('place', onValidresult)
-          .on('change', function () {
-            validationMessage.textContent = this.validationMessage;
+          google: googleConfig, messages: messages,
+        }).bind('input[type=search]', '.typeahead-wrapper', {
+            try_searches: ['nuñez de balboa, 120'],
+            custom_address_link: 'Añadir Manualmente',
+            getCustomAddress: function (resolve, reject) {
+              var form = document.getElementById('custom-address-form'),
+                  modal = form.querySelector('.modal'),
+                  preventClose = function (e) {
+                    e.stopPropagation();
+                  },
+                  closeForm = function () {
+                    modal.removeEventListener('click', preventClose);
+                    form.removeEventListener('click', closeForm);
+                    form.removeEventListener('submit', onSubmit);
+                    form.style.display = 'none';
+                  },
+                  onSubmit = function (e) {
+                    e.preventDefault();
+                    var data = formParams(form);
+                    data.street_number = Number(data.street_number);
+                    console.log('onSubmit', data );
+                    resolve(data);
+                    closeForm();
+                  };
+              form.style.display = '';
+
+              modal.addEventListener('click', preventClose);
+              form.addEventListener('click', closeForm);
+              form.addEventListener('submit', onSubmit);
+            }
+          })
+          .on('place', onPlace)
+          .on('change', function (resultAddress, choosed ) {
+            this.setAttribute('validation-message', this.validationMessage );
+            if( choosed ) validationMessage.textContent = this.validationMessage;
+            else validationMessage.textContent = '';
+
+            localStorage.setItem('app-search', this.value);
           });
         inputKey.value = appKey;
       }
@@ -154,12 +284,12 @@
         if( ta ) ta.unbind();
         ta = new AddressTypeahead('google', appKey, {
           google: googleConfig, messages: messages
-        }).bind('input[type=search]', '.typeahead-wrapper').on('place', onValidresult);
+        }).bind('input[type=search]', '.typeahead-wrapper').on('place', onPlace);
       });
 
-      inputStreet.addEventListener('input', function () {
-        localStorage.setItem('app-search', this.value);
-      });
+      // inputStreet.addEventListener('input', function () {
+      //   localStorage.setItem('app-search', this.value);
+      // });
     </script>
   </body>
 </html>
