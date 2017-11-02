@@ -100,7 +100,7 @@
 
   function formattedAddress (address) {
     if( !address ) return '';
-    return address.street + commaIf(address.street_number) + commaIf( address.postcode + ' ' + address.locality ) + commaIf( address.province ) + commaIf( address.state ) + commaIf( address.country );
+    return address.street + commaIf(address.street_number) + commaIf( address.postcode + ' ' + address.locality ) + commaIf( address.province ) + commaIf( address.region ) + commaIf( address.country );
   }
 
   var listen = document.documentElement.addEventListener ? function(element, eventName, listener, useCapture) {
@@ -250,7 +250,7 @@
       locality: fields.locality,
       sublocality: fields.sublocality_level_1,
       province: fields.administrative_area_level_2,
-      state: fields.administrative_area_level_1,
+      region: fields.administrative_area_level_1,
       country: fields.country,
     };
 
