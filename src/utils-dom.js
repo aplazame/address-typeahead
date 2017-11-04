@@ -44,26 +44,26 @@ export function _create () {
 
 var classListEnabled = 'classList' in document.documentElement;
 
-export let hasClass = classListEnabled ? function (el, className) {
+export var hasClass = classListEnabled ? function (el, className) {
   return el.classList.contains(className);
 } : function (el, className) {
   return new RegExp('\\b' + (className || '') + '\\b','').test(el.className);
 };
 
 
-export let addClass = classListEnabled ? function (el, className) {
+export var addClass = classListEnabled ? function (el, className) {
   el.classList.add(className);
 } : function (el, className) {
   if( !hasClass(el, className) ) el.className += ' ' + className;
 };
 
-export let removeClass = classListEnabled ? function (el, className) {
+export var removeClass = classListEnabled ? function (el, className) {
   el.classList.remove(className);
 } : function (el, className) {
   el.className = el.className.replace(new RegExp('\\s*' + className + '\\s*','g'), ' ');
 };
 
-export let toggleClass = classListEnabled ? (function () {
+export var toggleClass = classListEnabled ? (function () {
   var aux = document.createElement('span');
   aux.classList.toggle('test', true);
   aux.classList.toggle('test', true);

@@ -1,5 +1,5 @@
 
-export let _now = Date.now || function () { return new Date().getTime(); };
+export var _now = Date.now || function () { return new Date().getTime(); };
 
 export function debounce (fn, debounce_duration) {
   var debouncing = null,

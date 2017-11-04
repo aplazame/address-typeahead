@@ -18,6 +18,9 @@ build: test
 	$(shell npm bin)/rollup -o dist/address-typeahead.js --output.format=cjs src/address-typeahead.js
 	$(shell npm bin)/babel src/address-typeahead.js --out-file dist/address-typeahead.babel.js --presets=env
 
+	$(shell npm bin)/uglifyjs dist/address-typeahead.js -o dist/address-typeahead.min.js --compress --mangle
+	$(shell npm bin)/uglifyjs dist/address-typeahead.umd.js -o dist/address-typeahead.umd.min.js --compress --mangle
+
 npm.publish:
 	git pull --tags
 	npm version patch
