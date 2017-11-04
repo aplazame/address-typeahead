@@ -34,7 +34,7 @@ module.exports = {
           "always"
       ],
       "no-unused-vars": [
-          "error",
+          "warn",
           {
               "args": "all",
               "argsIgnorePattern": "^_\\w+"

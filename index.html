@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Demo Typeahead</title>
 
-    <script src="./address-typeahead.js"></script>
+    <script src="./dist/address-typeahead.umd.js"></script>
     <style rel="stylesheet">
 
       main {
@@ -171,7 +171,7 @@
             </label>
             <label class="input-wrapper">
               <div>Estado</div>
-              <input name="state" required value="Takoma del Norte"></input>
+              <input name="region" required value="Takoma del Norte"></input>
             </label>
             <div class="submit-wrapper">
               <button type="submit">Añadir</button>
@@ -195,11 +195,12 @@
         return qs;
       })();
 
-      var appKey = qs.key || localStorage.getItem('app-key'), ta,
-          inputKey = document.querySelector('input[type=text]'),
-          inputStreet = document.querySelector('input[type=search]'),
+      var ta,
+          input_key = document.querySelector('input[type=text]'),
+          input_street = document.querySelector('input[type=search]'),
           validationMessage = document.querySelector('.validation-message'),
           googleConfig = {
+            app_key: qs.key || localStorage.getItem('app-key'),
             types: ['address'],
             componentRestrictions: {
               country: 'es'
@@ -232,15 +233,18 @@
             return data;
           };
 
-      inputStreet.value = localStorage.getItem('app-search') || '';
+      input_street.value = localStorage.getItem('app-search') || '';
 
-      if( appKey ) {
-        ta = new AddressTypeahead('google', appKey, {
+      if( googleConfig.app_key ) {
+        ta = new AddressTypeahead({
           google: googleConfig, messages: messages,
-        }).bind('input[type=search]', '.typeahead-wrapper', {
-            try_searches: ['nuñez de balboa, 120'],
-            custom_address_link: 'Añadir Manualmente',
-            getCustomAddress: function (resolve, reject) {
+        })
+        .bind('input[type=search]', {
+          predictions_parent: '.typeahead-wrapper',
+          try_searches: ['nuñez de balboa, 120'],
+          custom_address: {
+            label: 'Añadir Manualmente',
+            getter: function (resolve, reject) {
               var form = document.getElementById('custom-address-form'),
                   modal = form.querySelector('.modal'),
                   preventClose = function (e) {
@@ -266,28 +270,31 @@
               form.addEventListener('click', closeForm);
               form.addEventListener('submit', onSubmit);
             }
-          })
-          .on('place', onPlace)
-          .on('change', function (resultAddress, choosed ) {
-            this.setAttribute('validation-message', this.validationMessage );
-            if( choosed ) validationMessage.textContent = this.validationMessage;
-            else validationMessage.textContent = '';
+          }
+        })
+        .on('place', onPlace)
+        .on('change', function (resultAddress, choosed ) {
+          this.setAttribute('validation-message', this.validationMessage );
+          if( choosed ) validationMessage.textContent = this.validationMessage;
+          else validationMessage.textContent = '';
 
-            localStorage.setItem('app-search', this.value);
-          });
-        inputKey.value = appKey;
+          localStorage.setItem('app-search', this.value);
+        });
+
+        input_key.value = googleConfig.app_key;
       }
 
-      inputKey.addEventListener('input', function () {
-        localStorage.setItem('app-key', this.value);
-        appKey = this.value;
+      input_key.addEventListener('input', function () {
+        googleConfig.app_key = this.value;
+        localStorage.setItem('app-key', googleConfig.app_key );
         if( ta ) ta.unbind();
-        ta = new AddressTypeahead('google', appKey, {
-          google: googleConfig, messages: messages
-        }).bind('input[type=search]', '.typeahead-wrapper').on('place', onPlace);
+        ta = new AddressTypeahead({
+              google: googleConfig, messages: messages
+            })
+            .bind('input[type=search]', '.typeahead-wrapper').on('place', onPlace);
       });
 
-      // inputStreet.addEventListener('input', function () {
+      // input_street.addEventListener('input', function () {
       //   localStorage.setItem('app-search', this.value);
       // });
     </script>

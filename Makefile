@@ -4,6 +4,20 @@ GIT_BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
 demo:
 	python -m SimpleHTTPServer & open http://localhost:8000
 
+lint:
+	@echo "❏ eslint"
+	@$(shell npm bin)/eslint src
+
+test: lint
+	@echo "❏ mocha tests"
+	# @$(shell npm bin)/mocha src/*-test.js --compilers js:babel-core/register
+	@$(shell npm bin)/mocha src/*-test.js --require babel-register
+
+build: test
+	$(shell npm bin)/rollup -o dist/address-typeahead.umd.js --output.format=umd -n=AddressTypeahead src/address-typeahead.js
+	$(shell npm bin)/rollup -o dist/address-typeahead.js --output.format=cjs src/address-typeahead.js
+	$(shell npm bin)/babel src/address-typeahead.js --out-file dist/address-typeahead.babel.js --presets=env
+
 npm.publish:
 	git pull --tags
 	npm version patch
@@ -20,3 +34,5 @@ github.release:
 	@true
 
 release: npm.publish github.release
+
+.DEFAULT_GOAL := build
