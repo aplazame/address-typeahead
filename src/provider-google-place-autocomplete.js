@@ -24,6 +24,7 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
 
   window[callback_name] = function () {
     self.places = window.google.maps.places;
+    self.predictions_OK = window.google.maps.places.PlacesServiceStatus.OK;
 
     self.service = {
       autocomplete: new self.places.AutocompleteService(),
@@ -52,11 +53,10 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
     self.service.autocomplete.getPlacePredictions( _merge({}, self.options, {
       input: input_text
     }), function (predictions, status) {
-      if( status != self.googlePredictionsOK ) {
+      if( status != self.predictions_OK ) {
         if( onError instanceof Function ) onError(status);
         return;
       }
-      console.log('getPredictions.then', predictions);
 
       if( onSuccess instanceof Function ) onSuccess(predictions);
     });
