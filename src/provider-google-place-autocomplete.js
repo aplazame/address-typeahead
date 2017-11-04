@@ -64,6 +64,24 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
 
 };
 
+GooglePlaceTypeahead.prototype.getPredictionHTML = function (prediction) {
+  var cursor = 0, src = prediction.description, result = '', from, len;
+
+  // if( prediction.custom ) return address2Search(prediction.address, prediction.address.street_number);
+
+  for( var i = 0, n = prediction.matched_substrings.length; i < n ; i++ ) {
+    from = prediction.matched_substrings[i].offset;
+    len = prediction.matched_substrings[i].length;
+    result += src.substr(cursor, from - cursor);
+    result += '<strong>' + src.substr(from, len) + '</strong>';
+    cursor = from + len;
+  }
+
+  result += src.substr(cursor);
+
+  return result;
+};
+
 GooglePlaceTypeahead.prototype.license_img = 'https://developers.google.com/places/documentation/images/powered-by-google-on-white.png?hl=es-419';
 
 export default GooglePlaceTypeahead;
