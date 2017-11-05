@@ -67,6 +67,12 @@ export function _merge () {
   return dest;
 }
 
+export function _find (list, iteratee, this_arg) {
+  for( var i = 0, n = list.length ; i < n ; i++ ) {
+    if( iteratee.call( this_arg, list[i], i ) ) return list[i];
+  }
+}
+
 export function _remove (list, iteratee, this_arg) {
   for( var i = list.length - 1 ; i >= 0 ; i-- ) {
     if( iteratee.call( this_arg, list[i], i ) ) list.splice(i, 1);

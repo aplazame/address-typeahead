@@ -82,30 +82,30 @@ export var toggleClass = classListEnabled ? (function () {
 
 // event functions
 
-export function onClick (el, listener, use_capture) {
+export function _onClick (el, listener, use_capture) {
   return el.addEventListener('click', listener, use_capture);
 }
 
-export function offClick (el, listener, use_capture) {
+export function _offClick (el, listener, use_capture) {
   return el.removeEventListener('click', listener, use_capture);
 }
 
-export function onInput (el, listener, use_capture) {
+export function _onInput (el, listener, use_capture) {
   return el.addEventListener('input', listener, use_capture);
 }
 
-export function onFocus (el, listener, use_capture) {
+export function _onFocus (el, listener, use_capture) {
   return el.addEventListener('focus', listener, use_capture);
 }
 
-export function offFocus (el, listener, use_capture) {
+export function _offFocus (el, listener, use_capture) {
   return el.removeEventListener('focus', listener, use_capture);
 }
 
-export function onBlur (el, listener, use_capture) {
+export function _onBlur (el, listener, use_capture) {
   return el.addEventListener('blur', listener, use_capture);
 }
 
-export function offBlur (el, listener, use_capture) {
+export function _offBlur (el, listener, use_capture) {
   return el.removeEventListener('blur', listener, use_capture);
 }
