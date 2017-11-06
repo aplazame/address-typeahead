@@ -190,6 +190,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   if( options.custom_address || place_provider.license_img ) predictions_wrapper.appendChild(predictions_footer_el);
 
   function onInput () {
+    if( selected.address && selected.address.custom ) _unselectPredictions();
+
     if( !input_el.value ) {
       predictions = [];
       _renderPredictions();
