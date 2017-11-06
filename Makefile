@@ -32,7 +32,7 @@ git.tag: export PKG_VERSION=$(shell node -e "process.stdout.write('v'+require('.
 git.tag: build
 	git pull --tags
 	git add dist -f --all
-	-git commit -n -m "v${PKG_VERSION}" 2> /dev/null; true
+	-git commit -n -m "${PKG_VERSION}" 2> /dev/null; true
 	git tag -a $(PKG_VERSION) -m "$(PKG_VERSION)"
 	git push --tags
 	# git push origin $(git_branch)
