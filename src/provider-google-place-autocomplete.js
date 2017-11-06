@@ -49,6 +49,10 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
 };
 
 GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess, onError) {
+  if( !input_text ) {
+    if( onSuccess instanceof Function ) onSuccess([]);
+    return;
+  }
 
   return this.load(function (self) {
     self.service.autocomplete.getPlacePredictions( _merge({}, self.options, {

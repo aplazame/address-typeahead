@@ -12,12 +12,12 @@ export function debounce (fn, debounce_duration) {
         }, debounce_duration);
       };
 
-  debounce_duration = debounce_duration || 80;
+  debounce_duration = debounce_duration || 400;
 
   return function () {
     var _this = this, _args = arguments;
 
-    if( !debouncing || _now() - last_hit > debounce_duration ) {
+    if( !debouncing || (_now() - last_hit) > debounce_duration ) {
       runHit(_this, _args);
     } else {
       clearTimeout(debouncing);

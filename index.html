@@ -44,7 +44,7 @@
         position: relative;
       }
 
-      .typeahead-predictions {
+      .apz-address-typeahead-predictions {
         position: absolute;
         top: 0;
         left: 0;
@@ -53,30 +53,42 @@
         background: white;
       }
 
-      .typeahead-predictions .predictions .prediction {
-        padding: 8px;
+      .apz-address-typeahead-predictions .-predictions-list .-prediction {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0 8px;
+        height: 48px;
         border-left: 4px solid transparent;
       }
-        .typeahead-predictions .predictions .prediction:hover {
+        .apz-address-typeahead-predictions .-predictions-list .-prediction:hover {
           background: #f9f9f9;
           cursor: pointer;
         }
 
-        .typeahead-predictions .predictions .prediction.selected {
+        .apz-address-typeahead-predictions .-predictions-list .-prediction._selected {
           border-left-color: #444;
         }
 
-      .typeahead-predictions .predictions .prediction + .prediction {
+      .apz-address-typeahead-predictions .-predictions-list .-prediction + .-prediction {
         border-top: 1px solid #ddd;
       }
 
-      .typeahead-predictions > .typeahead-footer {
-        padding: 4px;
+      .apz-address-typeahead-predictions .-predictions-list._custom-list._has_addresses {
+        border-top: 1px solid #ddd;
+      }
+
+      .apz-address-typeahead-predictions > .-predictions-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 8px;
+        height: 48px;
         text-align: right;
         border-top: 1px solid #eee;
       }
 
-      .typeahead-predictions > .typeahead-footer img.google-license {
+      .apz-address-typeahead-predictions > .-predictions-footer img.-license {
         vertical-align: middle;
         width: 120px;
       }
@@ -198,7 +210,8 @@
       var ta,
           input_key = document.querySelector('input[type=text]'),
           input_street = document.querySelector('input[type=search]'),
-          validationMessage = document.querySelector('.validation-message'),
+          input_editing = false,
+          validation_message_el = document.querySelector('.validation-message'),
           googleConfig = {
             app_key: qs.key || localStorage.getItem('app-key'),
             types: ['address'],
@@ -206,16 +219,37 @@
               country: 'es'
             }
           },
-          messages = {
+          error_messages = {
             number_missing: 'Falta el número de la dirección'
           },
-          onPlace = function (place) {
-            console.log('place', place);
+          onAddress = function (address) {
+            console.log('address', address);
             // try{ throw new Error(); }catch(err){
             //   console.log('place', place);
             //   console.log('stack', err.stack);
             // }
-            document.querySelector('pre.code').innerHTML = place ? JSON.stringify(place, null, '  ') : '---';
+            document.querySelector('pre.code').innerHTML = address ? JSON.stringify(address, null, '  ') : '---';
+          },
+          onChange = function (input_text, address, show_number_error) {
+            var error_key = '';
+
+            if( !address ) error_key = input_text ? 'address_mismatch' : 'required';
+            else if( show_number_error && !address.street_number ) error_key = 'number_missing';
+
+            var validation_message = error_key ? ( error_messages[error_key] || ( 'error: ' + error_key ) ) : '';
+
+            input_street.setAttribute('validation-message', validation_message );
+            input_street.setCustomValidity( validation_message );
+
+            validation_message_el.textContent = input_street.validationMessage;
+            validationMessage = input_street.validationMessage;
+
+            if( !error_key ) localStorage.setItem('app-search', input_street.value);
+
+            onAddress(address);
+          },
+          onBlur = function (input_text, address) {
+            onChange(input_text, address, true);
           },
           formParams = function (form) {
             if( !(form instanceof Element) && form.length ) form = form[0];
@@ -231,55 +265,51 @@
               }
             });
             return data;
+          },
+          customAddressGetter = function (resolve, reject) {
+            var form = document.getElementById('custom-address-form'),
+                modal = form.querySelector('.modal'),
+                preventClose = function (e) {
+                  e.stopPropagation();
+                },
+                closeForm = function () {
+                  modal.removeEventListener('click', preventClose);
+                  form.removeEventListener('click', closeForm);
+                  form.removeEventListener('submit', onSubmit);
+                  form.style.display = 'none';
+                },
+                onSubmit = function (e) {
+                  e.preventDefault();
+                  var data = formParams(form);
+                  data.street_number = Number(data.street_number);
+                  console.log('onSubmit', data );
+                  resolve(data);
+                  closeForm();
+                };
+            form.style.display = '';
+
+            modal.addEventListener('click', preventClose);
+            form.addEventListener('click', closeForm);
+            form.addEventListener('submit', onSubmit);
           };
 
       input_street.value = localStorage.getItem('app-search') || '';
 
       if( googleConfig.app_key ) {
         ta = new AddressTypeahead({
-          google: googleConfig, messages: messages,
+          google: googleConfig,
         })
         .bind('input[type=search]', {
           predictions_parent: '.typeahead-wrapper',
           try_searches: ['nuñez de balboa, 120'],
           custom_address: {
             label: 'Añadir Manualmente',
-            getter: function (resolve, reject) {
-              var form = document.getElementById('custom-address-form'),
-                  modal = form.querySelector('.modal'),
-                  preventClose = function (e) {
-                    e.stopPropagation();
-                  },
-                  closeForm = function () {
-                    modal.removeEventListener('click', preventClose);
-                    form.removeEventListener('click', closeForm);
-                    form.removeEventListener('submit', onSubmit);
-                    form.style.display = 'none';
-                  },
-                  onSubmit = function (e) {
-                    e.preventDefault();
-                    var data = formParams(form);
-                    data.street_number = Number(data.street_number);
-                    console.log('onSubmit', data );
-                    resolve(data);
-                    closeForm();
-                  };
-              form.style.display = '';
-
-              modal.addEventListener('click', preventClose);
-              form.addEventListener('click', closeForm);
-              form.addEventListener('submit', onSubmit);
-            }
+            getter: customAddressGetter
           }
         })
-        .on('place', onPlace)
-        .on('change', function (resultAddress, choosed ) {
-          this.setAttribute('validation-message', this.validationMessage );
-          if( choosed ) validationMessage.textContent = this.validationMessage;
-          else validationMessage.textContent = '';
-
-          localStorage.setItem('app-search', this.value);
-        });
+        // .on('address', onAddress)
+        .on('change', onChange)
+        .on('blur', onBlur);
 
         input_key.value = googleConfig.app_key;
       }
@@ -289,9 +319,12 @@
         localStorage.setItem('app-key', googleConfig.app_key );
         if( ta ) ta.unbind();
         ta = new AddressTypeahead({
-              google: googleConfig, messages: messages
+              google: googleConfig,
             })
-            .bind('input[type=search]', '.typeahead-wrapper').on('place', onPlace);
+            .bind('input[type=search]', '.typeahead-wrapper')
+            // .on('address', onAddress)
+            .on('change', onChange)
+            .on('blur', onBlur);
       });
 
       // input_street.addEventListener('input', function () {
