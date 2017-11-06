@@ -39,7 +39,9 @@ git.tag: build
 
 npm.publish: npm.pushVersion git.tag
 	npm publish
-	git reset --hard origin/$(git_branch)
+	git reset --soft HEAD~1
+	git reset HEAD
+	# git reset --hard origin/$(git_branch)
 	@git checkout $(git_branch)
 
 github.release: export PKG_NAME=$(shell node -e "console.log(require('./package.json').name);")
