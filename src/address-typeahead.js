@@ -225,6 +225,9 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     }
   }
   _onFocus(input_el, onFocus);
+  _onClick(input_el, function () {
+    predictions_wrapper.style.display = '';
+  });
 
   function onBlur () {
     if( is_waiting_custom_address ) return;
