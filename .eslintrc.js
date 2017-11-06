@@ -1,6 +1,7 @@
 module.exports = {
     "env": {
-      "browser": true
+      "browser": true,
+      "es6": true,
     },
     "globals": {
       "module": true,
@@ -8,6 +9,9 @@ module.exports = {
       "global": true,
     },
     "extends": "eslint:recommended",
+    "parserOptions": {
+        "sourceType": "module",
+    },
     "rules": {
       /* TODO
       "indent": [
@@ -30,7 +34,7 @@ module.exports = {
           "always"
       ],
       "no-unused-vars": [
-          "error",
+          "warn",
           {
               "args": "all",
               "argsIgnorePattern": "^_\\w+"
