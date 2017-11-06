@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/address-typeahead.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "make test"
   },
   "author": "Jesús Germade <jesus@aplazame.com>",
   "license": "ISC",
