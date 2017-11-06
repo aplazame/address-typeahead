@@ -37,7 +37,7 @@ git.tag: build
 	# git push origin $(git_branch)
 
 npm.publish: npm.pushVersion git.tag
-	cd dist && npm publish
+	npm publish
 	git reset --hard origin/$(git_branch)
 	@git checkout $(git_branch)
 
