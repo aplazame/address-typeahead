@@ -33,7 +33,7 @@ git.tag: build
 	git pull --tags
 	git add dist -f --all
 	-git commit -n -m "v${PKG_VERSION}" 2> /dev/null; true
-	git tag -a v$PKG_VERSION -m "v$PKG_VERSION"
+	git tag -a v$(PKG_VERSION) -m "v$(PKG_VERSION)"
 	git push --tags
 	# git push origin $(git_branch)
 
