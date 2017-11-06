@@ -36,8 +36,6 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
     self.loaded = true;
 
     self.loading_listeners.splice(0).forEach(function (cb) { cb(self); });
-
-    console.log('Google loaded!', self);
   };
 
   script.src = 'https://maps.googleapis.com/maps/api/js?key=' +

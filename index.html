@@ -277,12 +277,13 @@
                   form.removeEventListener('click', closeForm);
                   form.removeEventListener('submit', onSubmit);
                   form.style.display = 'none';
+                  reject();
                 },
                 onSubmit = function (e) {
                   e.preventDefault();
+                  e.stopPropagation();
                   var data = formParams(form);
                   data.street_number = Number(data.street_number);
-                  console.log('onSubmit', data );
                   resolve(data);
                   closeForm();
                 };
