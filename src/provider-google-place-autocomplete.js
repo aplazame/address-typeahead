@@ -105,12 +105,17 @@ function _parsePlace (place, prediction) {
     formatted_address: place.formatted_address,
     url: place.url,
 
-    _place: place,
+    place: place,
     _fields: fields,
     _prediction: prediction,
   };
 
-  if( place.geometry && place.geometry.location ) address.location = place.geometry.location;
+  if( place.geometry && place.geometry.location ) {
+    address.location = {
+        type: 'Point',
+        coordinates: [place.geometry.location.lon, place.geometry.location.lat],
+    };
+  }
 
   return address;
 }
