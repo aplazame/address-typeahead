@@ -1,6 +1,9 @@
 
 git_branch := $(shell git rev-parse --abbrev-ref HEAD)
 
+npm.install:
+	npm install
+
 demo:
 	python -m SimpleHTTPServer & open http://localhost:8000
 
@@ -53,6 +56,6 @@ github.release:
 	@echo ${RELEASE_URL}
 	@true
 
-release: npm.publish github.release
+release: npm.install npm.publish github.release
 
 .DEFAULT_GOAL := build
