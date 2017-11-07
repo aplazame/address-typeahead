@@ -113,7 +113,10 @@ function _parsePlace (place, prediction) {
   if( place.geometry && place.geometry.location ) {
     address.location = {
         type: 'Point',
-        coordinates: [place.geometry.location.lon, place.geometry.location.lat],
+        coordinates: [
+          place.geometry.location.lng instanceof Function ? place.geometry.location.lng() : place.geometry.location.lng,
+          place.geometry.location.lat instanceof Function ? place.geometry.location.lat() : place.geometry.location.lat
+        ],
     };
   }
 
