@@ -242,6 +242,10 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   });
 
   component.input = input_el;
+  component.focus = function () {
+    input_el.focus();
+    return component;
+  };
   Object.defineProperty(component, 'value', {
     get: function () { return input_el.value; },
     set: function (value) {
