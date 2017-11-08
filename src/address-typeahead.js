@@ -95,6 +95,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
     if( _predictions ) predictions = _predictions;
 
+    toggleClass(predictions_wrapper, '_has_predictions', predictions.length);
+
     // wrapper.style.display = null;
 
     if( predictions.length > children.length ) {
