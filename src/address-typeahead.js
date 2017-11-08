@@ -276,6 +276,26 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   if( input_el.value ) onInput();
 
+  var try_searches = options.try_searches || [];
+
+  function trySearches () {
+    var try_search = try_searches.shift();
+
+    if( !try_search ) {
+      predictions = [];
+      return;
+    }
+
+    place_provider.getPredictions(try_search, function (_predictions) {
+      if(predictions[0]) {
+        _selectPrediction(predictions[0]);
+        input_el.value = try_search;
+      } else trySearches();
+    });
+  }
+
+  trySearches();
+
   return component;
 };
 
