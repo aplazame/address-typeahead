@@ -82,7 +82,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
           _renderPredictions([]);
           addClass(el, '_selected');
           selected.address = custom_address;
-          input_el.value = custom_address.formatted_address;
+          input_el.value = address2Search(custom_address);
           _hidePredictions();
         };
     el.innerHTML = address2Search(custom_address);
