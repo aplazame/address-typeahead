@@ -243,6 +243,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   _onClick(document, function (e) {
     var el = e.target;
+    if( document.activeElement === input_el ) return;
+
     while( el && el !== document.body ) {
       if( el === predictions_wrapper || el === input_el ) return;
       el = el.parentElement;
