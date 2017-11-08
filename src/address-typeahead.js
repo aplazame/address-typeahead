@@ -287,8 +287,9 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     }
 
     place_provider.getPredictions(try_search, function (_predictions) {
-      if(predictions[0]) {
-        _selectPrediction(predictions[0]);
+      if(_predictions[0]) {
+        _renderPredictions(_predictions);
+        _selectPrediction(_predictions[0]);
         input_el.value = try_search;
       } else trySearches();
     });
