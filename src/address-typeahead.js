@@ -263,6 +263,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
         _renderPredictions([]);
         input_el.value = address2Search(address);
       } else {
+        if( !address.place ) return;
         selected.prediction = address.place;
         selected.address = address;
         input_el.value = address2Search(address, true);
