@@ -1,6 +1,6 @@
 
 import GooglePlaceTypeahead from './provider-google-place-autocomplete';
-import { _create, addClass, removeClass, toggleClass, _onClick, _onInput, _onFocus, _onBlur } from './utils-dom';
+import { _create, addClass, removeClass, toggleClass, _onClick, _onInput, _onFocus } from './utils-dom';
 import { debounce, eventMethods, _find } from './utils';
 
 function commaIf (text) {
@@ -238,15 +238,22 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     predictions_wrapper.style.display = 'none';
     component.emit('blur', [input_el.value, selected.address]);
   }
-  _onBlur(input_el, function () {
-    setTimeout(onBlur, 100);
-  });
+
+  _onClick(document, function (e) {
+    var el = e.target;
+    while( el && el !== document.body ) {
+      if( el === predictions_wrapper || el === input_el ) return;
+      el = el.parentElement;
+    }
+    onBlur();
+  }, true);
 
   component.input = input_el;
   component.focus = function () {
     input_el.focus();
     return component;
   };
+
   Object.defineProperty(component, 'value', {
     get: function () { return input_el.value; },
     set: function (value) {

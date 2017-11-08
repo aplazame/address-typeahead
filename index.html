@@ -277,7 +277,6 @@
                   form.removeEventListener('click', closeForm);
                   form.removeEventListener('submit', onSubmit);
                   form.style.display = 'none';
-                  reject();
                 },
                 onSubmit = function (e) {
                   e.preventDefault();
@@ -290,7 +289,10 @@
             form.style.display = '';
 
             modal.addEventListener('click', preventClose);
-            form.addEventListener('click', closeForm);
+            form.addEventListener('click', function () {
+              closeForm();
+              reject();
+            });
             form.addEventListener('submit', onSubmit);
           };
 
