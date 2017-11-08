@@ -70,6 +70,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     var el = _create('.-prediction._custom'),
         selectThisAddress = function () {
           _unselectPredictions();
+          _renderPredictions([]);
           addClass(el, '_selected');
           selected.address = custom_address;
           self.emit('address', [custom_address]);
@@ -80,8 +81,10 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     return el;
   }
 
-  function _renderPredictions () {
+  function _renderPredictions (_predictions) {
     var i, n, children = predictions_list_el.children;
+
+    if( _predictions ) predictions = _predictions;
 
     // wrapper.style.display = null;
 
@@ -94,7 +97,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     for( i = 0, n = predictions.length; i < n ; i++ ) {
       children[i].innerHTML = place_provider.getPredictionHTML(predictions[i]);
       children[i].setAttribute('data-predition', predictions[i].id );
-      toggleClass(children[i], '_custom', predictions[i].custom );
+      toggleClass(children[i], '_custom', predictions[i].place === 'custom' );
     }
     // selectPrediction(selectedCursor);
 
@@ -159,14 +162,13 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       is_waiting_custom_address = true;
       options.custom_address.getter(function (custom_address) {
         is_waiting_custom_address = false;
-        custom_address.custom = true;
+        custom_address.place = 'custom';
         custom_address.formatted_address = formattedAddress(custom_address);
         custom_address.url = 'https://maps.google.com/?q=' + encodeURIComponent( custom_address.formatted_address );
         addClass(predictions_list_custom_el, '_has_addresses');
         predictions_list_custom_el.appendChild( _createCustomAddressEl(custom_address, true) );
 
-        predictions = [];
-        _renderPredictions();
+        _renderPredictions([]);
         input_el.value = address2Search(custom_address);
         onBlur();
       }, function () {
@@ -193,16 +195,14 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     if( selected.address && selected.address.custom ) _unselectPredictions();
 
     if( !input_el.value ) {
-      predictions = [];
-      _renderPredictions();
+      _renderPredictions([]);
       _unselectPredictions();
       emitOnChange();
       return;
     }
 
     place_provider.getPredictions(input_el.value, function (_predictions) {
-      predictions = _predictions;
-      _renderPredictions();
+      _renderPredictions(_predictions);
       if(predictions[0]) _selectPrediction(predictions[0]);
     });
   }

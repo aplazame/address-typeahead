@@ -75,8 +75,8 @@ GooglePlaceTypeahead.prototype.getPredictionHTML = function (prediction) {
   for( var i = 0, n = prediction.matched_substrings.length; i < n ; i++ ) {
     from = prediction.matched_substrings[i].offset;
     len = prediction.matched_substrings[i].length;
-    result += src.substr(cursor, from - cursor);
-    result += '<strong>' + src.substr(from, len) + '</strong>';
+    result += src.substr(cursor, from - cursor).replace(/^ | $/g, '&nbsp;');
+    result += '<strong>' + src.substr(from, len).replace(/^ | $/g, '&nbsp;') + '</strong>';
     cursor = from + len;
   }
 
