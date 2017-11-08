@@ -22,8 +22,6 @@ function formattedAddress (address) {
 function AddressTypeahead (options) {
   this.options = options || {};
 
-  eventMethods(this);
-
   if( this.options.google ) {
     this.provider = new GooglePlaceTypeahead(this.options.google).load();
   }
@@ -31,6 +29,7 @@ function AddressTypeahead (options) {
 
 AddressTypeahead.prototype.bind = function (input_el, options) {
   var self = this,
+      component = eventMethods({}),
       predictions = [],
       selected = {};
 
@@ -55,7 +54,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   // methods
 
   function emitOnChange () {
-    self.emit('change', [input_el.value, selected.address]);
+    component.emit('change', [input_el.value, selected.address]);
   }
 
   function _createPredictionEl () {
@@ -73,7 +72,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
           _renderPredictions([]);
           addClass(el, '_selected');
           selected.address = custom_address;
-          self.emit('address', [custom_address]);
+          // component.emit('address', [custom_address]);
         };
     el.innerHTML = address2Search(custom_address);
     _onClick(el, selectThisAddress);
@@ -131,7 +130,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
         if( document.activeElement !== input_el ) {
           input_el.value = address2Search(address, true);
         }
-        self.emit('address', [address]);
+        // component.emit('address', [address]);
         emitOnChange();
       }
     });
@@ -170,6 +169,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
         _renderPredictions([]);
         input_el.value = address2Search(custom_address);
+        emitOnChange();
         onBlur();
       }, function () {
         is_waiting_custom_address = false;
@@ -235,15 +235,43 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       input_el.value = address2Search(selected.address, true);
     }
     predictions_wrapper.style.display = 'none';
-    self.emit('blur', [input_el.value, selected.address]);
+    component.emit('blur', [input_el.value, selected.address]);
   }
   _onBlur(input_el, function () {
     setTimeout(onBlur, 100);
   });
 
+  component.input = input_el;
+  Object.defineProperty(component, 'value', {
+    get: function () { return input_el.value; },
+    set: function (value) {
+      input_el.value = value;
+      onInput();
+    }
+  });
+  Object.defineProperty(component, 'address', {
+    get: function () { return selected.address; },
+    set: function (address) {
+      if( address.place === 'custom' ) {
+        addClass(predictions_list_custom_el, '_has_addresses');
+        predictions_list_custom_el.appendChild( _createCustomAddressEl(address, true) );
+
+        _renderPredictions([]);
+        input_el.value = address2Search(address);
+      } else {
+        selected.prediction = address.place;
+        selected.address = address;
+        input_el.value = address2Search(address, true);
+        // component.emit('address', [address]);
+      }
+      emitOnChange();
+      if( document.activeElement !== input_el ) onBlur();
+    }
+  });
+
   if( input_el.value ) onInput();
 
-  return self;
+  return component;
 };
 
 export default AddressTypeahead;
