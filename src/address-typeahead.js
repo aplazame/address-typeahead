@@ -150,7 +150,6 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     }
 
     delete selected.prediction;
-    delete selected.address;
   }
 
 
@@ -194,6 +193,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   function onInput () {
     if( selected.address && selected.address.custom ) _unselectPredictions();
+    delete selected.address;
 
     if( !input_el.value ) {
       _renderPredictions([]);
@@ -257,22 +257,18 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   Object.defineProperty(component, 'address', {
     get: function () { return selected.address; },
     set: function (address) {
-      if( !address ) return;
+      if( !address || !address.place ) return;
       if( address.place === 'custom' ) {
         addClass(predictions_list_custom_el, '_has_addresses');
         predictions_list_custom_el.appendChild( _createCustomAddressEl(address, true) );
-
         _renderPredictions([]);
         input_el.value = address2Search(address);
       } else {
-        if( !address.place ) return;
-        selected.prediction = address.place;
-        selected.address = address;
         input_el.value = address2Search(address, true);
         _renderPredictions([address.place]);
         _selectPrediction(address.place, true);
-        // component.emit('address', [address]);
       }
+      selected.address = address;
       emitOnChange();
       if( document.activeElement !== input_el ) onBlur();
     }
