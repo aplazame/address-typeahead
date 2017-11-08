@@ -107,7 +107,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     }
   }
 
-  function _selectPrediction (prediction) {
+  function _selectPrediction (prediction, skip_details) {
     if( typeof prediction === 'string' ) prediction = _find(predictions, function (_prediction) {
       return _prediction.id === prediction;
     });
@@ -124,6 +124,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
     selected.prediction = prediction;
 
+    if( skip_details ) return;
     place_provider.getAddress(prediction, function (address) {
       if( prediction === selected.prediction ) {
         selected.address = address;
@@ -268,6 +269,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
         selected.address = address;
         input_el.value = address2Search(address, true);
         _renderPredictions([address.place]);
+        _selectPrediction(address.place, true);
         // component.emit('address', [address]);
       }
       emitOnChange();
