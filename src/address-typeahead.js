@@ -257,6 +257,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   Object.defineProperty(component, 'address', {
     get: function () { return selected.address; },
     set: function (address) {
+      if( !address ) return;
       if( address.place === 'custom' ) {
         addClass(predictions_list_custom_el, '_has_addresses');
         predictions_list_custom_el.appendChild( _createCustomAddressEl(address, true) );
