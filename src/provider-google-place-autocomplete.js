@@ -70,6 +70,8 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
 GooglePlaceTypeahead.prototype.getPredictionHTML = function (prediction) {
   var cursor = 0, src = prediction.description, result = '', from, len;
 
+  if( !prediction.matched_substrings ) return prediction.formatted_address;
+
   // if( prediction.custom ) return address2Search(prediction.address, prediction.address.street_number);
 
   for( var i = 0, n = prediction.matched_substrings.length; i < n ; i++ ) {

@@ -107,7 +107,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     }
 
     for( i = 0, n = predictions.length; i < n ; i++ ) {
-      children[i].innerHTML = predictions[i].formatted_address || place_provider.getPredictionHTML(predictions[i]);
+      children[i].innerHTML = place_provider.getPredictionHTML(predictions[i]) || address2Search(predictions[i]);
       children[i].setAttribute('data-predition', predictions[i].id );
       toggleClass(children[i], '_custom', predictions[i].place === 'custom' );
     }
