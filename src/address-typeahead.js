@@ -1,6 +1,6 @@
 
 import GooglePlaceTypeahead from './provider-google-place-autocomplete';
-import { _create, addClass, removeClass, toggleClass, _onClick, _onInput, _onFocus } from './utils-dom';
+import { _create, addClass, removeClass, toggleClass, _onClick, _offClick, _onInput, _onFocus, _onBlur } from './utils-dom';
 import { debounce, eventMethods, _find } from './utils';
 
 function commaIf (text) {
@@ -43,7 +43,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     ) : input_el.parentElement;
 
   var place_provider = self.provider,
-      is_waiting_custom_address = false;
+      is_waiting_custom_address = false,
+      clicked_predictions = false;
 
   var predictions_list_el = _create('.-predictions-list');
   var predictions_list_custom_el = _create('.-predictions-list._custom-list');
@@ -53,18 +54,36 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   // methods
 
+  function _numberTyped () {
+    var matches = input_el.value && input_el.value.match(/.*?, *(\d+) *(,.*?)?$|^.*? \d+/);
+    return matches ? matches[1] : null;
+  }
+
   function _hidePredictions () {
     if( is_waiting_custom_address ) return;
-    if( selected.address && !selected.address.street_number ) {
+    if( selected.address && !selected.address.street_number && !_numberTyped() ) {
       _renderPredictions([]);
       input_el.value = address2Search(selected.address, true);
     }
     predictions_wrapper.style.display = 'none';
-    component.emit('blur', [input_el.value, selected.address]);
+    component.emit('blur', [input_el.value, selected.address, _numberTyped() ]);
+    _offClick(document, onDocumentClick, true);
+  }
+
+  function onDocumentClick (e) {
+    var el = e.target;
+    if( document.activeElement === input_el ) return;
+
+    while( el && el !== document.body ) {
+      if( el === predictions_wrapper || el === input_el ) return;
+      el = el.parentElement;
+    }
+    _hidePredictions();
+    clicked_predictions = false;
   }
 
   function emitOnChange () {
-    component.emit('change', [input_el.value, selected.address]);
+    component.emit('change', [input_el.value, selected.address, _numberTyped() ]);
   }
 
   function _createPredictionEl () {
@@ -244,16 +263,36 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     predictions_wrapper.style.display = '';
   });
 
-  _onClick(document, function (e) {
-    var el = e.target;
-    if( document.activeElement === input_el ) return;
+  _onClick(document, onDocumentClick, true);
 
-    while( el && el !== document.body ) {
-      if( el === predictions_wrapper || el === input_el ) return;
-      el = el.parentElement;
+  input_el.addEventListener('keydown', function (e) {
+    switch (e.keyCode) {
+      case 38:
+        e.preventDefault();
+        if( selected.prediction && predictions ) {
+          _selectPrediction( predictions[predictions.indexOf(selected.prediction) - 1] );
+        }
+        break;
+      case 40:
+        e.preventDefault();
+        if( selected.prediction && predictions ) {
+          _selectPrediction( predictions[predictions.indexOf(selected.prediction) + 1] );
+        }
+        break;
     }
-    _hidePredictions();
-  }, true);
+  });
+
+  predictions_wrapper.addEventListener('mousedown', function (_e) {
+    clicked_predictions = false;
+  });
+
+  _onBlur(input_el, function () {
+    setTimeout(function () {
+      if( document.activeElement === input_el ) return;
+      if( clicked_predictions ) clicked_predictions = false;
+      else _hidePredictions();
+    }, 100);
+  });
 
   component.input = input_el;
   component.focus = function () {
@@ -301,7 +340,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     }
 
     place_provider.getPredictions(try_search, function (_predictions) {
-      if(_predictions[0]) {
+      if(_predictions && _predictions[0]) {
         _renderPredictions(_predictions);
         _selectPrediction(_predictions[0]);
         input_el.value = try_search;

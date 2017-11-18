@@ -223,18 +223,23 @@
             number_missing: 'Falta el número de la dirección'
           },
           onAddress = function (address) {
-            console.log('address', address);
+            // console.log('address', address);
             // try{ throw new Error(); }catch(err){
             //   console.log('place', place);
             //   console.log('stack', err.stack);
             // }
             document.querySelector('pre.code').innerHTML = address ? JSON.stringify(address, null, '  ') : '---';
           },
-          onChange = function (input_text, address, show_number_error) {
+          onChange = function (input_text, address, number_typed, show_number_error) {
             var error_key = '';
 
             if( !address ) error_key = input_text ? 'address_mismatch' : 'required';
-            else if( show_number_error && !address.street_number ) error_key = 'number_missing';
+            else if( show_number_error ) {
+              if( number_typed && Number(number_typed) !== Number(address.street_number) ) error_key = 'number_mismatch';
+              else if( number_typed && !address.street_number ) error_key = 'number_missing';
+            }
+
+            console.log('onChange', arguments, error_key );
 
             var validation_message = error_key ? ( error_messages[error_key] || ( 'error: ' + error_key ) ) : '';
 
@@ -248,8 +253,8 @@
 
             onAddress(address);
           },
-          onBlur = function (input_text, address) {
-            onChange(input_text, address, true);
+          onBlur = function (input_text, address, number_typed) {
+            onChange(input_text, address, number_typed, true);
           },
           formParams = function (form) {
             if( !(form instanceof Element) && form.length ) form = form[0];
