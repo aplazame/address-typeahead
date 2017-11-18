@@ -59,6 +59,14 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     return matches ? matches[1] : null;
   }
 
+  function emitOnChange () {
+    component.emit('change', [input_el.value, selected.address, _numberTyped() ]);
+  }
+
+  function emitOnBlur () {
+    component.emit('blur', [input_el.value, selected.address, _numberTyped() ]);
+  }
+
   function _hidePredictions () {
     if( is_waiting_custom_address ) return;
     if( selected.address && !selected.address.street_number && !_numberTyped() ) {
@@ -66,7 +74,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       input_el.value = address2Search(selected.address, true);
     }
     predictions_wrapper.style.display = 'none';
-    component.emit('blur', [input_el.value, selected.address, _numberTyped() ]);
+    emitOnBlur();
     _offClick(document, onDocumentClick, true);
   }
 
@@ -82,14 +90,23 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     clicked_predictions = false;
   }
 
-  function emitOnChange () {
-    component.emit('change', [input_el.value, selected.address, _numberTyped() ]);
-  }
-
   function _createPredictionEl () {
     var el = _create('.-prediction');
     _onClick(el, function () {
-      _selectPrediction(this.getAttribute('data-predition'), _hidePredictions);
+      _selectPrediction(this.getAttribute('data-predition'), function () {
+        var number_typed = _numberTyped();
+        if( !selected.address || !selected.address.street_number) {
+          if( document.activeElement !== input_el ) input_el.focus();
+          emitOnChange();
+          return;
+        }
+        if( number_typed && Number(number_typed) !== Number(selected.address.street_number) ) {
+          if( document.activeElement !== input_el ) input_el.focus();
+          emitOnChange();
+          return;
+        }
+        _hidePredictions();
+      });
     });
     return el;
   }
@@ -156,13 +173,19 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
     selected.prediction = prediction;
 
-    if( then === false ) return;
+    if( then === false ) {
+      emitOnChange();
+      return;
+    }
     place_provider.getAddress(prediction, function (address) {
       if( prediction === selected.prediction ) {
         selected.address = address;
-        if( document.activeElement !== input_el ) {
+        if( document.activeElement !== input_el && selected.address && !selected.address.street_number && !_numberTyped() ) {
           input_el.value = address2Search(address, true);
         }
+        // if( document.activeElement !== input_el ) {
+        //   input_el.value = address2Search(address, true);
+        // }
         if( then instanceof Function ) then();
         // component.emit('address', [address]);
         emitOnChange();
@@ -267,6 +290,12 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   input_el.addEventListener('keydown', function (e) {
     switch (e.keyCode) {
+      case 13:
+        if( selected.address && selected.address.street_number && ( !_numberTyped() || Number(_numberTyped()) === Number(selected.address.street_number) ) ) {
+          e.preventDefault();
+          _hidePredictions();
+        } else emitOnBlur();
+        break;
       case 38:
         e.preventDefault();
         if( selected.prediction && predictions ) {

@@ -234,9 +234,9 @@
             var error_key = '';
 
             if( !address ) error_key = input_text ? 'address_mismatch' : 'required';
-            else if( show_number_error ) {
+            else if( number_typed || show_number_error ) {
               if( number_typed && Number(number_typed) !== Number(address.street_number) ) error_key = 'number_mismatch';
-              else if( number_typed && !address.street_number ) error_key = 'number_missing';
+              else if( !address.street_number ) error_key = 'number_missing';
             }
 
             console.log('onChange', arguments, error_key );
