@@ -101,12 +101,12 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
         var number_typed = _numberTyped();
         if( !selected.address || !selected.address.street_number) {
           if( document.activeElement !== input_el ) input_el.focus();
-          emitOnChange();
+          emitOnBlur();
           return;
         }
         if( number_typed && Number(number_typed) !== Number(selected.address.street_number) ) {
           if( document.activeElement !== input_el ) input_el.focus();
-          emitOnChange();
+          emitOnBlur();
           return;
         }
         _hidePredictions();
