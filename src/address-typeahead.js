@@ -78,6 +78,10 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     _offClick(document, onDocumentClick, true);
   }
 
+  function _predictionsAreHidden () {
+    return predictions_wrapper.style.display === 'none';
+  }
+
   function onDocumentClick (e) {
     var el = e.target;
     if( document.activeElement === input_el ) return;
@@ -291,6 +295,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   input_el.addEventListener('keydown', function (e) {
     switch (e.keyCode) {
       case 13:
+        if( _predictionsAreHidden() ) return;
         if( selected.address && selected.address.street_number && ( !_numberTyped() || Number(_numberTyped()) === Number(selected.address.street_number) ) ) {
           e.preventDefault();
           _hidePredictions();
