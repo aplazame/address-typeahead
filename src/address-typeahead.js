@@ -34,6 +34,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       selected = {};
 
   options = options || {};
+
   if( typeof input_el === 'string' ) input_el = document.querySelector(input_el);
 
   var predictions_parent = options.predictions_parent ?
@@ -42,7 +43,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       options.predictions_parent
     ) : input_el.parentElement;
 
-  var place_provider = self.provider,
+  var focus_root = options.focus_root || document,
+      place_provider = self.provider,
       is_waiting_custom_address = false,
       clicked_predictions = false;
 
@@ -184,7 +186,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     place_provider.getAddress(prediction, function (address) {
       if( prediction === selected.prediction ) {
         selected.address = address;
-        if( document.activeElement !== input_el && selected.address && !selected.address.street_number && !_numberTyped() ) {
+        if( focus_root.activeElement !== input_el && selected.address && !selected.address.street_number && !_numberTyped() ) {
           input_el.value = address2Search(address, true);
         }
         // if( document.activeElement !== input_el ) {
