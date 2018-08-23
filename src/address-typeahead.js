@@ -86,7 +86,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   function onDocumentClick (e) {
     var el = e.target;
-    if( document.activeElement === input_el ) return;
+    if( focus_root.activeElement === input_el ) return;
 
     while( el && el !== document.body ) {
       if( el === predictions_wrapper || el === input_el ) return;
@@ -102,12 +102,12 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       _selectPrediction(this.getAttribute('data-predition'), function () {
         var number_typed = _numberTyped();
         if( !selected.address || !selected.address.street_number) {
-          if( document.activeElement !== input_el ) input_el.focus();
+          if( focus_root.activeElement !== input_el ) input_el.focus();
           emitOnBlur();
           return;
         }
         if( number_typed && Number(number_typed) !== Number(selected.address.street_number) ) {
-          if( document.activeElement !== input_el ) input_el.focus();
+          if( focus_root.activeElement !== input_el ) input_el.focus();
           emitOnBlur();
           return;
         }
@@ -189,7 +189,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
         if( focus_root.activeElement !== input_el && selected.address && !selected.address.street_number && !_numberTyped() ) {
           input_el.value = address2Search(address, true);
         }
-        // if( document.activeElement !== input_el ) {
+        // if( focus_root.activeElement !== input_el ) {
         //   input_el.value = address2Search(address, true);
         // }
         if( then instanceof Function ) then();
@@ -324,7 +324,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   _onBlur(input_el, function () {
     setTimeout(function () {
-      if( document.activeElement === input_el ) return;
+      if( focus_root.activeElement === input_el ) return;
       if( clicked_predictions ) clicked_predictions = false;
       else _hidePredictions();
     }, 100);
@@ -359,7 +359,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       }
       selected.address = address;
       emitOnChange();
-      if( document.activeElement !== input_el ) _hidePredictions();
+      if( focus_root.activeElement !== input_el ) _hidePredictions();
     }
   });
 
