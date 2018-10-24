@@ -2,7 +2,7 @@
 import {_merge} from './utils';
 
 function GooglePlaceTypeahead (options) {
-  this.options = options;
+  this.options = options || {};
 
   this.loading_listeners = [];
 }
@@ -52,9 +52,12 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
     return;
   }
 
+  var self = this;
+
   return this.load(function (self) {
     self.service.autocomplete.getPlacePredictions( _merge({}, self.options, {
-      input: input_text
+      input: input_text,
+      sessionToken: self.options.session_token,
     }), function (predictions, status) {
       if( status != self.predictions_OK ) {
         if( onError instanceof Function ) onError(status);
@@ -125,11 +128,19 @@ function _parsePlace (place, prediction) {
   return address;
 }
 
+// docs: https://developers.google.com/maps/documentation/javascript/places#place_details_requests
+var _place_fields = 'address_component, adr_address, alt_id, formatted_address, geometry, icon, id, name, permanently_closed, photo, place_id, plus_code, scope, type, url, utc_offset, vicinity'.split(/ *, */);
+
 GooglePlaceTypeahead.prototype.getAddress = function (prediction, onSuccess, onError) {
+  var self = this;
   // var params = typeof place_id === 'string' ? { placeId: place_id } : ( place_id.place_id ? {placeId: place_id.place_id} : place_id );
-  this.service.place.getDetails(prediction, function (place, result) {
+  // console.log('getAddress', prediction);
+  this.service.place.getDetails({
+    placeId: prediction.place_id,
+    fields: self.options.place_fields || _place_fields,
+  }, function (place, result) {
     if( result === 'OK' ) {
-      if( onSuccess instanceof Function ) onSuccess(_parsePlace(place));
+      if( onSuccess instanceof Function ) onSuccess(_parsePlace(place, prediction));
     } else {
       if( onError instanceof Function ) onError(result);
     }

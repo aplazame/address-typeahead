@@ -35,18 +35,18 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   options = options || {};
 
-  if( typeof input_el === 'string' ) input_el = document.querySelector(input_el);
-
-  var predictions_parent = options.predictions_parent ?
-    ( typeof options.predictions_parent === 'string' ?
-      document.querySelector(options.predictions_parent) :
-      options.predictions_parent
-    ) : input_el.parentElement;
-
   var focus_root = options.focus_root || document,
       place_provider = self.provider,
       is_waiting_custom_address = false,
       clicked_predictions = false;
+
+  if( typeof input_el === 'string' ) input_el = focus_root.querySelector(input_el);
+
+  var predictions_parent = options.predictions_parent ?
+    ( typeof options.predictions_parent === 'string' ?
+      focus_root.querySelector(options.predictions_parent) :
+      options.predictions_parent
+    ) : input_el.parentElement;
 
   var predictions_list_el = _create('.-predictions-list');
   var predictions_list_custom_el = _create('.-predictions-list._custom-list');
