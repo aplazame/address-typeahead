@@ -270,7 +270,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     });
   }
 
-  _onInput(input_el, debounce(onInput) );
+  _onInput(input_el, debounce(onInput, options.debounce_duration) );
 
   function _cursorToNumberPosition (address) {
     setTimeout(function () {
