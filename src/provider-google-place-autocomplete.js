@@ -27,6 +27,8 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
     self.places = window.google.maps.places;
     self.predictions_OK = window.google.maps.places.PlacesServiceStatus.OK;
 
+    self.session_token = new self.places.AutocompleteSessionToken();
+
     self.service = {
       autocomplete: new self.places.AutocompleteService(),
       place: new self.places.PlacesService(document.createElement('div')),
@@ -52,12 +54,12 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
     return;
   }
 
-  var self = this;
+  // var self = this;
 
   return this.load(function (self) {
     self.service.autocomplete.getPlacePredictions( _merge({}, self.options, {
       input: input_text,
-      sessionToken: self.options.session_token,
+      sessionToken: self.options.session_token || self.session_token,
     }), function (predictions, status) {
       if( status != self.predictions_OK ) {
         if( onError instanceof Function ) onError(status);
