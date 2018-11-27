@@ -1,392 +1,216 @@
 
-import GooglePlaceTypeahead from './provider-google-place-autocomplete';
-import { _create, addClass, removeClass, toggleClass, _onClick, _offClick, _onInput, _onFocus, _onBlur } from './utils-dom';
-import { debounce, eventMethods, _find } from './utils';
+import { debounce, eventMethods } from './utils'
+import { _on, _onInput } from './utils-dom'
 
-function commaIf (text) {
-  if( !text ) return '';
-  return ', ' + text;
+import GooglePlaceTypeahead from './provider-google-place-autocomplete'
+import TypeaheadPredictions from './typeahead-predictions'
+import { _address2Search, _formattedAddress } from './utils-address-format'
+
+function _numberTyped (input_value) {
+  var matches = input_value && input_value.match(/.*?, *(\d+) *(,.*?)?$|^.*? \d+/)
+  return matches ? matches[1] : null
 }
 
-function address2Search (address, numberPlaceholder) {
-  if( !address ) return '';
-  var areaName = address.sublocality || address.locality || address.city;
-  return address.street + ( commaIf(address.street_number) || (numberPlaceholder ? ', ' : '') ) + commaIf(areaName !== address.street && areaName);
+function _cursorToNumberPosition (input_el, address) {
+  setTimeout(function () {
+    input_el.setSelectionRange(address.street.length + 2, address.street.length + 2)
+  }, 10)
+  setTimeout(function () {
+    input_el.setSelectionRange(address.street.length + 2, address.street.length + 2)
+  }, 100)
 }
 
-function formattedAddress (address) {
-  if( !address ) return '';
-  return address.street + commaIf(address.street_number) + commaIf( address.postcode + ' ' + address.locality ) + commaIf( address.province ) + commaIf( address.region ) + commaIf( address.country );
+function __trySearches (try_searches, getPredictions, callback) {
+  var try_search = try_searches.shift()
+
+  if( !try_search ) return
+
+  getPredictions(try_search, function (predictions_data) {
+    if(predictions_data && predictions_data[0]) {
+      callback(predictions_data, try_search)
+    } else __trySearches(try_searches, getPredictions, callback)
+  })
 }
 
 function AddressTypeahead (options) {
-  this.options = options || {};
+  options = options || {}
+  this.options = options
 
-  if( this.options.google ) {
-    this.provider = new GooglePlaceTypeahead(this.options.google).load();
+  this.focus_root = options.focus_root || document
+
+  if( options.google ) {
+    this.provider = new GooglePlaceTypeahead(options.google).load()
   }
 }
 
 AddressTypeahead.prototype.bind = function (input_el, options) {
   var self = this,
       component = eventMethods({}),
-      predictions = [],
-      selected = {};
+      // predictions = [],
+      selected_address = null,
+      number_typed = false
 
-  options = options || {};
+  options = options || {}
 
-  var focus_root = options.focus_root || document,
-      place_provider = self.provider,
-      is_waiting_custom_address = false,
-      clicked_predictions = false;
+  var focus_root = self.focus_root,
+      place_provider = self.provider
 
-  if( typeof input_el === 'string' ) input_el = focus_root.querySelector(input_el);
+  if( typeof input_el === 'string' ) input_el = focus_root.querySelector(input_el)
 
-  var predictions_parent = options.predictions_parent ?
-    ( typeof options.predictions_parent === 'string' ?
-      focus_root.querySelector(options.predictions_parent) :
-      options.predictions_parent
-    ) : input_el.parentElement;
+  self.input_el = input_el
 
-  var predictions_list_el = _create('.-predictions-list');
-  var predictions_list_custom_el = _create('.-predictions-list._custom-list');
-  var predictions_footer_el = _create('.-predictions-footer');
-  var predictions_wrapper = _create('.apz-address-typeahead-predictions', [predictions_list_el, predictions_list_custom_el]);
-  predictions_wrapper.style.display = 'none';
+  var predictions_ctrl = new TypeaheadPredictions(self, options)
 
-  // methods
+  // methods  
 
-  function _numberTyped () {
-    var matches = input_el.value && input_el.value.match(/.*?, *(\d+) *(,.*?)?$|^.*? \d+/);
-    return matches ? matches[1] : null;
+  function _emitEvent (event_name) {
+    component.emit(event_name, [input_el.value, selected_address, number_typed])
   }
 
-  function emitOnChange () {
-    component.emit('change', [input_el.value, selected.address, _numberTyped() ]);
-  }
-
-  function emitOnBlur () {
-    component.emit('blur', [input_el.value, selected.address, _numberTyped() ]);
-  }
-
-  function _hidePredictions () {
-    if( is_waiting_custom_address ) return;
-    if( selected.address && !selected.address.street_number && !_numberTyped() ) {
-      _renderPredictions([]);
-      input_el.value = address2Search(selected.address, true);
-    }
-    predictions_wrapper.style.display = 'none';
-    emitOnBlur();
-    _offClick(document, onDocumentClick, true);
-  }
-
-  function _predictionsAreHidden () {
-    return predictions_wrapper.style.display === 'none';
-  }
-
-  function onDocumentClick (e) {
-    var el = e.target;
-    if( focus_root.activeElement === input_el ) return;
-
-    while( el && el !== document.body ) {
-      if( el === predictions_wrapper || el === input_el ) return;
-      el = el.parentElement;
-    }
-    _hidePredictions();
-    clicked_predictions = false;
-  }
-
-  function _createPredictionEl () {
-    var el = _create('.-prediction');
-    _onClick(el, function () {
-      _selectPrediction(this.getAttribute('data-predition'), function () {
-        var number_typed = _numberTyped();
-        if( !selected.address || !selected.address.street_number) {
-          if( focus_root.activeElement !== input_el ) input_el.focus();
-          emitOnBlur();
-          return;
-        }
-        if( number_typed && Number(number_typed) !== Number(selected.address.street_number) ) {
-          if( focus_root.activeElement !== input_el ) input_el.focus();
-          emitOnBlur();
-          return;
-        }
-        _hidePredictions();
-      });
-    });
-    return el;
-  }
-
-  function _createCustomAddressEl (custom_address, select_this_address) {
-    var el = _create('.-prediction._custom'),
-        selectThisAddress = function () {
-          _unselectPredictions();
-          _renderPredictions([]);
-          addClass(el, '_selected');
-          selected.address = custom_address;
-          input_el.value = address2Search(custom_address);
-          _hidePredictions();
-        };
-    el.innerHTML = address2Search(custom_address);
-    _onClick(el, selectThisAddress);
-    if(select_this_address) selectThisAddress();
-    return el;
-  }
-
-  function _renderPredictions (_predictions) {
-    var i, n, children = predictions_list_el.children;
-
-    if( _predictions ) predictions = _predictions;
-
-    toggleClass(predictions_wrapper, '_has_predictions', predictions.length);
-
-    // wrapper.style.display = null;
-
-    if( predictions.length > children.length ) {
-      for( i = 0, n = predictions.length - children.length ; i < n ; i++ ) {
-        predictions_list_el.appendChild( _createPredictionEl() );
-      }
-    }
-
-    for( i = 0, n = predictions.length; i < n ; i++ ) {
-      children[i].innerHTML = place_provider.getPredictionHTML(predictions[i]) || address2Search(predictions[i]);
-      children[i].setAttribute('data-predition', predictions[i].id );
-      toggleClass(children[i], '_custom', predictions[i].place === 'custom' );
-    }
-    // selectPrediction(selectedCursor);
-
-    if( predictions.length < children.length ) {
-      while( children[predictions.length] ) {
-        predictions_list_el.removeChild(children[predictions.length]);
-      }
-    }
-  }
-
-  function _selectPrediction (prediction, then) {
-    if( typeof prediction === 'string' ) prediction = _find(predictions, function (_prediction) {
-      return _prediction.id === prediction;
-    });
-
-    if( !prediction ) return;
-
-    _unselectPredictions();
-    _find(predictions_list_el.children, function (prediction_el) {
-      if( prediction_el.getAttribute('data-predition') === prediction.id ) {
-        addClass(prediction_el, '_selected');
-        return true;
-      }
-    });
-
-    selected.prediction = prediction;
-
-    if( then === false ) {
-      emitOnChange();
-      return;
-    }
+  function _fetchAddress (prediction) {
     place_provider.getAddress(prediction, function (address) {
-      if( prediction === selected.prediction ) {
-        selected.address = address;
-        if( focus_root.activeElement !== input_el && selected.address && !selected.address.street_number && !_numberTyped() ) {
-          input_el.value = address2Search(address, true);
-        }
-        // if( focus_root.activeElement !== input_el ) {
-        //   input_el.value = address2Search(address, true);
-        // }
-        if( then instanceof Function ) then();
-        // component.emit('address', [address]);
-        emitOnChange();
-      }
-    });
+      selected_address = address
+    })
   }
 
-  function _unselectPredictions () {
-    var i, n, children = predictions_list_el.children;
-
-    for( i = 0, n = children.length; i < n ; i++ ) {
-      removeClass(children[i], '_selected');
-    }
-
-    children = predictions_list_custom_el.children;
-    for( i = 0, n = children.length; i < n ; i++ ) {
-      removeClass(children[i], '_selected');
-    }
-
-    delete selected.prediction;
+  function _selectAddress (address) {
+    selected_address = address
+    _emitEvent('change')
   }
 
-
-  // initialization
-
-  if( options.custom_address ) (function () {
-    var button = _create('button.-custom-address', { type: 'button' }, { textContent: options.custom_address.label });
-    _onClick(button, function () {
-      is_waiting_custom_address = true;
-      options.custom_address.getter(function (custom_address) {
-        is_waiting_custom_address = false;
-        custom_address.place = 'custom';
-        custom_address.formatted_address = formattedAddress(custom_address);
-        custom_address.url = 'https://maps.google.com/?q=' + encodeURIComponent( custom_address.formatted_address );
-        addClass(predictions_list_custom_el, '_has_addresses');
-        predictions_list_custom_el.appendChild( _createCustomAddressEl(custom_address, true) );
-
-        _renderPredictions([]);
-        input_el.value = address2Search(custom_address);
-        emitOnChange();
-        _hidePredictions();
-      }, function () {
-        is_waiting_custom_address = false;
-        input_el.focus();
-      });
-    });
-
-    predictions_footer_el.appendChild(button);
-  })();
-
-  if( place_provider.license_img ) {
-    predictions_footer_el.appendChild(
-      _create('.-license', [
-        _create('img', { src: place_provider.license_img })
-      ])
-    );
-  }
-
-  predictions_parent.appendChild(predictions_wrapper);
-  if( options.custom_address || place_provider.license_img ) predictions_wrapper.appendChild(predictions_footer_el);
-
-  function onInput () {
-    if( selected.address && selected.address.custom ) _unselectPredictions();
-    delete selected.address;
+  function __onInput () {
+    number_typed = _numberTyped(input_el.value)
 
     if( !input_el.value ) {
-      _renderPredictions([]);
-      _unselectPredictions();
-      emitOnChange();
-      return;
+      predictions_ctrl.clear()
+      return _selectAddress(null)
     }
 
-    place_provider.getPredictions(input_el.value, function (_predictions) {
-      _renderPredictions(_predictions);
-      if(predictions[0]) _selectPrediction(predictions[0]);
-    });
+    place_provider.getPredictions(input_el.value, function (_predictions_data) {
+      // predictions_ctrl.selected(null)
+      predictions_ctrl.render(_predictions_data)
+
+      if( !_predictions_data.length ) return
+
+      if( _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
+        predictions_ctrl.select(_predictions_data[0])
+      }
+      // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
+    })
   }
 
-  _onInput(input_el, debounce(onInput, options.debounce_duration) );
+  predictions_ctrl.on('selected', function (prediction) {
+    if( !prediction ) return _selectAddress(null)
 
-  function _cursorToNumberPosition (address) {
-    setTimeout(function () {
-      input_el.setSelectionRange(address.street.length + 2, address.street.length + 2);
-    }, 10);
-    setTimeout(function () {
-      input_el.setSelectionRange(address.street.length + 2, address.street.length + 2);
-    }, 100);
-  }
+    if( prediction.__address__ ) return _selectAddress(prediction.__address__)
 
-  function onFocus () {
-    predictions_wrapper.style.display = '';
-    if( selected.address && !selected.address.street_number ) {
-      _cursorToNumberPosition(selected.address);
+    _fetchAddress(prediction, function (address) {
+      if( predictions_ctrl.selected !== prediction ) return
+      prediction.__address__ = address
+      _selectAddress(address)
+    })
+  })
+
+  _onInput(input_el, debounce(__onInput, options.debounce_duration) )
+
+  function __onFocus () {
+    predictions_ctrl.show()
+    if( selected_address && !selected_address.street_number ) {
+      _cursorToNumberPosition(selected_address)
+    } else {
+      input_el.value = _address2Search(selected_address, true, false)
     }
   }
-  _onFocus(input_el, onFocus);
-  _onClick(input_el, function () {
-    predictions_wrapper.style.display = '';
-  });
 
-  _onClick(document, onDocumentClick, true);
+  _on(input_el, 'focus', __onFocus)
+
+  _on(input_el, 'click', function () {
+    predictions_ctrl.show()
+  })
 
   input_el.addEventListener('keydown', function (e) {
     switch (e.keyCode) {
       case 13:
-        if( _predictionsAreHidden() ) return;
-        if( selected.address && selected.address.street_number && ( !_numberTyped() || Number(_numberTyped()) === Number(selected.address.street_number) ) ) {
-          e.preventDefault();
-          _hidePredictions();
-        } else emitOnBlur();
-        break;
+        if( predictions_ctrl.is_hidden ) return
+        if( selected_address && selected_address.street_number && ( !number_typed || Number(number_typed) === Number(selected_address.street_number) ) ) {
+          e.preventDefault()
+          predictions_ctrl.hide()
+        }
+        break
       case 38:
-        e.preventDefault();
-        if( selected.prediction && predictions ) {
-          _selectPrediction( predictions[predictions.indexOf(selected.prediction) - 1] );
-        }
-        break;
+        e.preventDefault()
+        predictions_ctrl.selectPrevious()
+        break
       case 40:
-        e.preventDefault();
-        if( selected.prediction && predictions ) {
-          _selectPrediction( predictions[predictions.indexOf(selected.prediction) + 1] );
-        }
-        break;
+        e.preventDefault()
+        predictions_ctrl.selectNext()
+        break
     }
-  });
+  })
 
-  predictions_wrapper.addEventListener('mousedown', function (_e) {
-    clicked_predictions = false;
-  });
+  // predictions_wrapper.addEventListener('mousedown', function (_e) {
+  //   clicked_predictions = false
+  // })
 
-  _onBlur(input_el, function () {
+  _on(input_el, 'blur', function () {
+    if( selected_address && selected_address.street_number ) input_el.value = _formattedAddress(selected_address)
+
     setTimeout(function () {
-      if( focus_root.activeElement === input_el ) return;
-      if( clicked_predictions ) clicked_predictions = false;
-      else _hidePredictions();
-    }, 100);
-  });
+      if( focus_root.activeElement === input_el ) return
+      // if( clicked_predictions ) clicked_predictions = false
+      predictions_ctrl.hide()
+    }, 100)
+  })
 
-  component.input = input_el;
+  component.input = input_el
   component.focus = function () {
-    input_el.focus();
-    return component;
-  };
-
-  Object.defineProperty(component, 'value', {
-    get: function () { return input_el.value; },
-    set: function (value) {
-      input_el.value = value;
-      onInput();
-    }
-  });
-  Object.defineProperty(component, 'address', {
-    get: function () { return selected.address; },
-    set: function (address) {
-      if( !address || !address.place ) return;
-      if( address.place === 'custom' ) {
-        addClass(predictions_list_custom_el, '_has_addresses');
-        predictions_list_custom_el.appendChild( _createCustomAddressEl(address, true) );
-        _renderPredictions([]);
-        input_el.value = address2Search(address);
-      } else {
-        input_el.value = address2Search(address, true);
-        _renderPredictions([address.place]);
-        _selectPrediction(address.place, false);
-      }
-      selected.address = address;
-      emitOnChange();
-      if( focus_root.activeElement !== input_el ) _hidePredictions();
-    }
-  });
-
-  if( input_el.value ) onInput();
-
-  var try_searches = options.try_searches || [];
-
-  function trySearches () {
-    var try_search = try_searches.shift();
-
-    if( !try_search ) {
-      predictions = [];
-      return;
-    }
-
-    place_provider.getPredictions(try_search, function (_predictions) {
-      if(_predictions && _predictions[0]) {
-        _renderPredictions(_predictions);
-        _selectPrediction(_predictions[0]);
-        input_el.value = try_search;
-      } else trySearches();
-    });
+    input_el.focus()
+    return component
   }
 
-  trySearches();
+  Object.defineProperty(component, 'value', {
+    get: function () { return input_el.value },
+    set: function (value) {
+      input_el.value = value
+      __onInput()
+    }
+  })
 
-  return component;
-};
+  Object.defineProperty(component, 'address', {
+    get: function () { return selected_address },
+    set: function (address) {
+      if( !address || !address.place ) return
+      selected_address = address
 
-export default AddressTypeahead;
+      if( address.place === 'custom' ) {
+        predictions_ctrl.addCustomPrediction(address)
+        input_el.value = _address2Search(address)
+      } else {
+        predictions_ctrl.setPredictions([address.place])
+        input_el.value = _address2Search(address, true)
+        // _selectPrediction(address.place, false)
+      }
+      predictions_ctrl.select(address)
+      _emitEvent('change')
+      // if( focus_root.activeElement !== input_el ) predictions_ctrl.hide()
+    }
+  })
+
+  if( input_el.value ) __onInput()
+
+  if( options.try_searches ) {
+    __trySearches(
+      options.try_searches,
+      place_provider.getPredictions.bind(place_provider),
+      function (predictions_data, try_search) {
+        predictions_ctrl.setPredictions(predictions_data)
+        predictions_ctrl.select(predictions_data[0])
+        input_el.value = try_search
+      }
+    )
+  }
+
+  return component
+}
+
+export default AddressTypeahead
