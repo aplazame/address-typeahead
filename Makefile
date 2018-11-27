@@ -16,13 +16,34 @@ test: lint
 	# @$(shell npm bin)/mocha src/*-test.js --compilers js:babel-core/register
 	@$(shell npm bin)/mocha src/*-test.js --require babel-register
 
-build: test
+bundle:
 	$(shell npm bin)/rollup -o dist/address-typeahead.umd.js --output.format=umd -n=AddressTypeahead src/address-typeahead.js
 	$(shell npm bin)/rollup -o dist/address-typeahead.js --output.format=cjs src/address-typeahead.js
 	$(shell npm bin)/babel src/address-typeahead.js --out-file dist/address-typeahead.babel.js --presets=env
 
 	$(shell npm bin)/uglifyjs dist/address-typeahead.js -o dist/address-typeahead.min.js --compress --mangle
 	$(shell npm bin)/uglifyjs dist/address-typeahead.umd.js -o dist/address-typeahead.umd.min.js --compress --mangle
+
+build: test bundle
+
+ifndef LIVE_PORT
+export LIVE_PORT=8000
+endif
+ifndef LIVE_HOST
+export LIVE_HOST=localhost
+endif
+ifndef LIVE_WAIT
+export LIVE_WAIT=500
+endif
+
+dev:
+	$(shell npm bin)/watch 'make build' src --wait=${LIVE_WAIT}
+
+live-server:
+	$(shell npm bin)/live-server --host=${LIVE_HOST} --port=${LIVE_PORT} --watch=dist --wait=${LIVE_WAIT}
+
+live:
+	node -e "const {spawn} = require('child_process');spawn('make', ['dev'], { stdio: 'inherit' });spawn('make', ['live-server'], { stdio: 'inherit' });"
 
 npm.increaseVersion:
 	npm version patch --no-git-tag-version
