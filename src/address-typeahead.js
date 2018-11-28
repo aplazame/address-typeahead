@@ -1,10 +1,14 @@
 
 import { debounce, eventMethods } from './utils'
-import { _on, _onInput } from './utils-dom'
+import { _on } from './utils-dom'
 
 import GooglePlaceTypeahead from './provider-google-place-autocomplete'
 import TypeaheadPredictions from './typeahead-predictions'
 import { _address2Search, _formattedAddress } from './utils-address-format'
+
+var KEY_ENTER = 13,
+    KEY_UP = 38,
+    KEY_DOWN = 40
 
 function _numberTyped (input_value) {
   var matches = input_value && input_value.match(/.*?, *(\d+) *(,.*?)?$|^.*? \d+/)
@@ -48,7 +52,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       component = eventMethods({}),
       // predictions = [],
       selected_address = null,
-      number_typed = false
+      number_typed = false,
+      fetching_address = null
 
   options = options || {}
 
@@ -67,18 +72,35 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
     component.emit(event_name, [input_el.value, selected_address, number_typed])
   }
 
-  function _fetchAddress (prediction) {
-    place_provider.getAddress(prediction, function (address) {
-      selected_address = address
-    })
-  }
-
   function _selectAddress (address) {
     selected_address = address
+    console.log('selected_address', selected_address, input_el.value)
     _emitEvent('change')
   }
 
+  function _fetchAddress (prediction, callback) {
+    fetching_address = []
+
+    var fetched_input_value = input_el.value
+    place_provider.getAddress(prediction, function (address) {
+      if( input_el.value !== fetched_input_value || predictions_ctrl.selected !== prediction ) return
+      _selectAddress(address)
+      if( callback instanceof Function ) callback(address)
+      fetching_address.forEach(function (listener) {
+        listener(address)
+      })
+      fetching_address = null
+    })
+  }
+
+  var last_input_value = null
+
   function __onInput () {
+    if( input_el.value === last_input_value ) {
+      if( focus_root.activeElement === input_el ) predictions_ctrl.show()
+      return
+    }
+    last_input_value = input_el.value
     number_typed = _numberTyped(input_el.value)
 
     if( !input_el.value ) {
@@ -86,13 +108,16 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       return _selectAddress(null)
     }
 
+    console.log('__onInput', input_el.value)
+
+    var fetched_input_value = input_el.value
     place_provider.getPredictions(input_el.value, function (_predictions_data) {
       // predictions_ctrl.selected(null)
       predictions_ctrl.render(_predictions_data)
 
-      if( !_predictions_data.length ) return
+      if( !_predictions_data.length || input_el.value !== fetched_input_value ) return
 
-      if( _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
+      if( _predictions_data[0] && _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
         predictions_ctrl.select(_predictions_data[0])
       }
       // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
@@ -102,46 +127,65 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   predictions_ctrl.on('selected', function (prediction) {
     if( !prediction ) return _selectAddress(null)
 
-    if( prediction.__address__ ) return _selectAddress(prediction.__address__)
-
-    _fetchAddress(prediction, function (address) {
-      if( predictions_ctrl.selected !== prediction ) return
-      prediction.__address__ = address
-      _selectAddress(address)
-    })
+    if( prediction.place === 'custom' ) _selectAddress(prediction)
+    else _fetchAddress(prediction)
   })
 
-  _onInput(input_el, debounce(__onInput, options.debounce_duration) )
+  var _onInput = debounce(__onInput, options.debounce_duration)
+
+  _on(input_el, 'input', _onInput )
+  _on(input_el, 'change', _onInput )
 
   function __onFocus () {
     predictions_ctrl.show()
     if( selected_address && !selected_address.street_number ) {
-      _cursorToNumberPosition(selected_address)
-    } else {
+      input_el.value = _formattedAddress(selected_address, true)
+      _cursorToNumberPosition(input_el, selected_address)
+    } else if( selected_address ) {
       input_el.value = _address2Search(selected_address, true, false)
     }
+    __onInput()
   }
 
   _on(input_el, 'focus', __onFocus)
+  _on(input_el, 'click', __onFocus)
+
+  predictions_ctrl.on('cancel-custom_address', function () {
+    input_el.focus()
+  })
 
   _on(input_el, 'click', function () {
     predictions_ctrl.show()
   })
 
   input_el.addEventListener('keydown', function (e) {
+    if( e.keyCode !== KEY_ENTER ) predictions_ctrl.show()
+
     switch (e.keyCode) {
-      case 13:
+      case KEY_ENTER:
+        console.log('predictions_ctrl.is_hidden', predictions_ctrl.is_hidden)
         if( predictions_ctrl.is_hidden ) return
-        if( selected_address && selected_address.street_number && ( !number_typed || Number(number_typed) === Number(selected_address.street_number) ) ) {
-          e.preventDefault()
+        e.preventDefault()
+
+        if( selected_address && !selected_address.street_number ) {
+          input_el.value = _address2Search(selected_address, true, true)
+          _cursorToNumberPosition(input_el, selected_address)
+          __onInput()
+        } else {
+          if( fetching_address ) fetching_address.push(_renderInputOnBlur)
+          else _renderInputOnBlur(selected_address)
           predictions_ctrl.hide()
         }
+        // if( selected_address && selected_address.street_number && ( !number_typed || Number(number_typed) === Number(selected_address.street_number) ) ) {
+        //   e.preventDefault()
+        //   predictions_ctrl.hide()
+        // }
         break
-      case 38:
+      case KEY_UP:
         e.preventDefault()
         predictions_ctrl.selectPrevious()
         break
-      case 40:
+      case KEY_DOWN:
         e.preventDefault()
         predictions_ctrl.selectNext()
         break
@@ -152,11 +196,25 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   //   clicked_predictions = false
   // })
 
+  function _renderInputOnBlur (_address) {
+    input_el.value = _formattedAddress(_address, true)
+    console.log('_renderInputOnBlur', _address, input_el.value)
+  }
+
   _on(input_el, 'blur', function () {
-    if( selected_address && selected_address.street_number ) input_el.value = _formattedAddress(selected_address)
+    console.log('[blur]', predictions_ctrl.selected)
+    // if( predictions_ctrl.selected ) input_el.value = predictions_ctrl.selected.description
+    // input_el.value = _formattedAddress(predictions_ctrl.selected)
+    // if( selected_address && selected_address.street_number ) input_el.value = _formattedAddress(selected_address)
 
     setTimeout(function () {
-      if( focus_root.activeElement === input_el ) return
+      if( fetching_address ) fetching_address.push(_renderInputOnBlur)
+      else _renderInputOnBlur(selected_address)
+
+      if( predictions_ctrl.showing_custom || focus_root.activeElement === input_el ) return
+
+      // if( options.close_on_click !== false && predictions_ctrl.hasFocus() ) return
+      // console.log('focus_root.activeElement', focus_root.activeElement)
       // if( clicked_predictions ) clicked_predictions = false
       predictions_ctrl.hide()
     }, 100)
@@ -197,14 +255,14 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   })
 
   if( input_el.value ) __onInput()
-
-  if( options.try_searches ) {
+  else if( options.try_searches ) {
     __trySearches(
       options.try_searches,
       place_provider.getPredictions.bind(place_provider),
       function (predictions_data, try_search) {
         predictions_ctrl.setPredictions(predictions_data)
         predictions_ctrl.select(predictions_data[0])
+        console.log('try_search', try_search)
         input_el.value = try_search
       }
     )

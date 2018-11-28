@@ -5,6 +5,9 @@ function GooglePlaceTypeahead (options) {
   this.options = options || {}
 
   this.loading_listeners = []
+
+  this.addresses_cache = {}
+  this.predictions_cache = {}
 }
 
 var callback_num = 0
@@ -49,14 +52,24 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
 }
 
 GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess, onError) {
+  if( typeof input_text === 'string' ) input_text = input_text.trim()
+
   if( !input_text ) {
     if( onSuccess instanceof Function ) onSuccess([])
     return
   }
 
+  var self = this
+  var predictions_cache = self.predictions_cache
+
+  if( predictions_cache[input_text] ) {
+    onSuccess(predictions_cache[input_text])
+    return self
+  }
+
   // var self = this;
 
-  return this.load(function (self) {
+  self.load(function () {
     self.service.autocomplete.getPlacePredictions( _merge({}, self.options, {
       input: input_text,
       sessionToken: self.options.session_token || self.session_token,
@@ -66,9 +79,12 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
         return
       }
 
+      predictions_cache[input_text] = predictions
       if( onSuccess instanceof Function ) onSuccess(predictions)
     })
   })
+
+  return self
 
 }
 
@@ -134,15 +150,21 @@ function _parsePlace (place, prediction) {
 var _place_fields = 'address_component, adr_address, alt_id, formatted_address, geometry, icon, id, name, permanently_closed, photo, place_id, plus_code, scope, type, url, utc_offset, vicinity'.split(/ *, */)
 
 GooglePlaceTypeahead.prototype.getAddress = function (prediction, onSuccess, onError) {
-  var self = this
+  var self = this,
+      addresses_cache = self.addresses_cache
+
+  if( !prediction || !prediction.place_id ) throw new TypeError('prediction is not a valid prediction')
+
+  if( addresses_cache[prediction.place_id] ) return onSuccess(addresses_cache[prediction.place_id])
   // var params = typeof place_id === 'string' ? { placeId: place_id } : ( place_id.place_id ? {placeId: place_id.place_id} : place_id );
-  // console.log('getAddress', prediction);
-  this.service.place.getDetails({
+  // console.log('getAddress', prediction)
+  self.service.place.getDetails({
     placeId: prediction.place_id,
     fields: self.options.place_fields || _place_fields,
   }, function (place, result) {
     if( result === 'OK' ) {
-      if( onSuccess instanceof Function ) onSuccess(_parsePlace(place, prediction))
+      addresses_cache[prediction.place_id] = _parsePlace(place, prediction)
+      if( onSuccess instanceof Function ) onSuccess( addresses_cache[prediction.place_id] )
     } else {
       if( onError instanceof Function ) onError(result)
     }
