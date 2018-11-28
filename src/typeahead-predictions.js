@@ -107,7 +107,7 @@ TypeaheadPredictions.prototype.hasFocus = function __protoTypeaheadPredictionsHa
 }
 
 TypeaheadPredictions.prototype.select = function __protoTypeaheadPredictionsSelect (prediction) {
-  console.warn('TypeaheadPredictions.prototype.select', prediction)
+  // console.warn('TypeaheadPredictions.prototype.select', prediction)
   var children = this.list_el.children ||[]
 
   this.selected = prediction
