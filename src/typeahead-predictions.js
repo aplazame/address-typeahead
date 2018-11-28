@@ -65,6 +65,7 @@ export default function TypeaheadPredictions (TA, options) {
           _predictions.render()
           _predictions.select(custom_address)
           _predictions.emit('custom_address', [custom_address])
+          _predictions.hide()
         }, function _cancelCustomAddress () {
           _predictions.showing_custom = false
           _predictions.emit('cancel-custom_address')

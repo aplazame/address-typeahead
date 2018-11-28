@@ -8,7 +8,8 @@ import { _address2Search, _formattedAddress, _numberTyped, _cursorToNumberPositi
 
 var KEY_ENTER = 13,
     KEY_UP = 38,
-    KEY_DOWN = 40
+    KEY_DOWN = 40,
+    KEY_ESC = 27
 
 function __trySearches (try_searches, getPredictions, callback) {
   var try_search = try_searches.shift()
@@ -159,7 +160,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     } else if( selected_address ) {
       input_el.value = _address2Search(selected_address, true, false)
     }
-    __onInput()
+    if( !selected_address || selected_address.place !== 'custom' ) __onInput()
   }
 
   _on(input_el, 'focus', __onFocus)
@@ -177,6 +178,10 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     if( e.keyCode !== KEY_ENTER ) predictions_ctrl.show()
 
     switch (e.keyCode) {
+      case KEY_ESC:
+        input_el.value
+        __onInput()
+        break
       case KEY_ENTER:
         if( predictions_ctrl.is_hidden ) return
         e.preventDefault()
