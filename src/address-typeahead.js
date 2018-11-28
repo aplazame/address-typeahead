@@ -64,7 +64,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
         predictions_ctrl.setPredictions([_address.place])
         input_el.value = _address2Search(_address, true)
       }
-      predictions_ctrl.select(_address)
+      predictions_ctrl.select(_address.place)
       _emitEvent('change')
     },
   })
