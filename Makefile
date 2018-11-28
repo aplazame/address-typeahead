@@ -55,8 +55,12 @@ live-server:
 live:
 	node -e "const {spawn} = require('child_process');spawn('make', ['dev'], { stdio: 'inherit' });spawn('make', ['live-server'], { stdio: 'inherit' });"
 
+ifndef NPM_VERSION
+export NPM_VERSION=patch
+endif
+
 npm.increaseVersion:
-	npm version patch --no-git-tag-version
+	npm version ${NPM_VERSION} --no-git-tag-version
 
 npm.pushVersion: npm.increaseVersion
 	git commit -a -n -m "v$(shell node -e "process.stdout.write(require('./package').version + '\n')")" 2> /dev/null; true
