@@ -20,7 +20,7 @@ module.exports = {
       ],
       */
       "no-empty": ["error", { "allowEmptyCatch": true }],
-      "no-console": 0,
+      "no-console": 1,
       "linebreak-style": [
           "error",
           "unix"

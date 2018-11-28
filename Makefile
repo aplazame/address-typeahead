@@ -29,15 +29,17 @@ build: test bundle
 ifndef LIVE_PORT
 export LIVE_PORT=8000
 endif
+
 ifndef LIVE_HOST
 export LIVE_HOST=localhost
 endif
+
 ifndef LIVE_WAIT
-export LIVE_WAIT=500
+export LIVE_WAIT=100
 endif
 
 dev:
-	$(shell npm bin)/watch 'make build' src --wait=${LIVE_WAIT}
+	$(shell npm bin)/watch 'make build' src --wait=${LIVE_WAIT / 100}
 
 live-server:
 	$(shell npm bin)/live-server --host=${LIVE_HOST} --port=${LIVE_PORT} --watch=dist --wait=${LIVE_WAIT}

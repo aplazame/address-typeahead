@@ -60,6 +60,7 @@
         padding: 0 8px;
         height: 48px;
         border-left: 4px solid transparent;
+        outline: 0
       }
         .apz-typeahead_predictions .-predictions-list .-prediction:hover {
           background: #f9f9f9;
@@ -234,12 +235,14 @@
             var error_key = '';
 
             if( !address ) error_key = input_text ? 'address_mismatch' : 'required';
-            else if( number_typed || show_number_error ) {
-              if( number_typed && Number(number_typed) !== Number(address.street_number) ) error_key = 'number_mismatch';
-              else if( !address.street_number ) error_key = 'number_missing';
+            else if( !address.street_number ) {
+              // if( number_typed && Number(number_typed) !== Number(address.street_number) ) error_key = 'number_mismatch';
+              // else if( !address.street_number ) error_key = 'number_missing';
+
+              error_key = 'number_missing';
             }
 
-            console.log('onChange', arguments, error_key );
+            console.log('onChange', arguments, error_key || 'NO_ERROR' );
 
             var validation_message = error_key ? ( error_messages[error_key] || ( 'error: ' + error_key ) ) : '';
 
@@ -302,6 +305,7 @@
           };
 
       input_street.value = localStorage.getItem('app-search') || '';
+      console.log('initial value: \'' + input_street.value + '\'')
 
       if( googleConfig.app_key ) {
         ta = new AddressTypeahead({
