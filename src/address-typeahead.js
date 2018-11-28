@@ -53,6 +53,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       // predictions = [],
       selected_address = null,
       number_typed = false,
+      input_value_on_selected = null,
       fetching_address = null
 
   options = options || {}
@@ -81,9 +82,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
   function _fetchAddress (prediction, callback) {
     fetching_address = []
 
-    var fetched_input_value = input_el.value
     place_provider.getAddress(prediction, function (address) {
-      if( input_el.value !== fetched_input_value || predictions_ctrl.selected !== prediction ) return
+      if( input_el.value !== input_value_on_selected || predictions_ctrl.selected !== prediction ) return
       _selectAddress(address)
       if( callback instanceof Function ) callback(address)
       fetching_address.forEach(function (listener) {
@@ -126,6 +126,8 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   predictions_ctrl.on('selected', function (prediction) {
     if( !prediction ) return _selectAddress(null)
+
+    input_value_on_selected = input_el.value
 
     if( prediction.place === 'custom' ) _selectAddress(prediction)
     else _fetchAddress(prediction)
