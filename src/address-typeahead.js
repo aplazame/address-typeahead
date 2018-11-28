@@ -74,7 +74,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   function _selectAddress (address) {
     selected_address = address
-    console.log('selected_address', selected_address, input_el.value)
+    // console.log('selected_address', selected_address, input_el.value)
     _emitEvent('change')
   }
 
@@ -108,7 +108,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       return _selectAddress(null)
     }
 
-    console.log('__onInput', input_el.value)
+    // console.log('__onInput', input_el.value)
 
     var fetched_input_value = input_el.value
     place_provider.getPredictions(input_el.value, function (_predictions_data) {
@@ -163,7 +163,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
     switch (e.keyCode) {
       case KEY_ENTER:
-        console.log('predictions_ctrl.is_hidden', predictions_ctrl.is_hidden)
+        // console.log('predictions_ctrl.is_hidden', predictions_ctrl.is_hidden)
         if( predictions_ctrl.is_hidden ) return
         e.preventDefault()
 
@@ -198,11 +198,11 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
 
   function _renderInputOnBlur (_address) {
     input_el.value = _formattedAddress(_address, true)
-    console.log('_renderInputOnBlur', _address, input_el.value)
+    // console.log('_renderInputOnBlur', _address, input_el.value)
   }
 
   _on(input_el, 'blur', function () {
-    console.log('[blur]', predictions_ctrl.selected)
+    // console.log('[blur]', predictions_ctrl.selected)
     // if( predictions_ctrl.selected ) input_el.value = predictions_ctrl.selected.description
     // input_el.value = _formattedAddress(predictions_ctrl.selected)
     // if( selected_address && selected_address.street_number ) input_el.value = _formattedAddress(selected_address)
@@ -262,7 +262,7 @@ AddressTypeahead.prototype.bind = function (input_el, options) {
       function (predictions_data, try_search) {
         predictions_ctrl.setPredictions(predictions_data)
         predictions_ctrl.select(predictions_data[0])
-        console.log('try_search', try_search)
+        // console.log('try_search', try_search)
         input_el.value = try_search
       }
     )
