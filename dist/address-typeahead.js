@@ -464,14 +464,6 @@ function TypeaheadPredictions (TA, options) {
 
   predictions_parent.appendChild(wrapper_el);
 
-  if( options.license_img ) {
-    predictions_footer_el.appendChild(
-      _create('.-license', [
-        _create('img', { src: options.license_img })
-      ])
-    );
-  }
-
   if( options.custom_address ) (function __initCustomAddressButton () {
     var button_custom_address_el = _create('button.-custom-address', { type: 'button' }, { textContent: options.custom_address.label });
     _on(button_custom_address_el, 'click', function __initCustomAddressButtonClick () {
@@ -494,6 +486,15 @@ function TypeaheadPredictions (TA, options) {
     });
 
     predictions_footer_el.appendChild(button_custom_address_el);
+    
+    if( TA.provider.license_img ) {
+      predictions_footer_el.appendChild(
+        _create('.-license', [
+          _create('img', { src: TA.provider.license_img })
+        ])
+      );
+    }
+
   })();
 
   if( options.custom_address || options.license_img ) wrapper_el.appendChild(predictions_footer_el);
