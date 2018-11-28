@@ -38,8 +38,16 @@ ifndef LIVE_WAIT
 export LIVE_WAIT=100
 endif
 
+ifndef WATCH_WAIT
+export WATCH_WAIT=100
+endif
+
+ifndef WATCH_INTERVAL
+export WATCH_INTERVAL=400
+endif
+
 dev:
-	$(shell npm bin)/watch 'make build' src --wait=${LIVE_WAIT / 100}
+	$(shell npm bin)/watch 'make build' src --wait=${WATCH_WAIT / 100} --interval=${WATCH_INTERVAL / 100}
 
 live-server:
 	$(shell npm bin)/live-server --host=${LIVE_HOST} --port=${LIVE_PORT} --watch=dist --wait=${LIVE_WAIT}

@@ -15,3 +15,17 @@ export function _formattedAddress (address, number_placeholder, show_region, sho
   if( !address ) return ''
   return address.street + _commaIf(address.street_number || (number_placeholder ? ' ' : '')) + _commaIf( address.postcode + ' ' + address.locality ) + _commaIf( address.province !== address.locality && address.province ) + _commaIf( show_region && address.region ) + _commaIf( show_country && address.country )
 }
+
+export function _numberTyped (input_value) {
+  var matches = input_value && input_value.match(/.*?, *(\d+) *(,.*?)?$|^.*? \d+/)
+  return matches ? matches[1] : null
+}
+
+export function _cursorToNumberPosition (input_el, address) {
+  setTimeout(function __cursorToNumberAtempt1 () {
+    input_el.setSelectionRange(address.street.length + 2, address.street.length + 2)
+  }, 10)
+  setTimeout(function __cursorToNumberAtempt2 () {
+    input_el.setSelectionRange(address.street.length + 2, address.street.length + 2)
+  }, 100)
+}

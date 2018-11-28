@@ -2,7 +2,7 @@
 import { _create, _on, _off, _toggleClass } from './utils-dom'
 import { eventMethods } from './utils'
 
-import { _address2Search, _formattedAddress } from './utils-address-format'
+import { _address2Search, _formattedAddress } from './utils-address'
 
 var _push = Array.prototype.push
 
@@ -27,7 +27,7 @@ export default function TypeaheadPredictions (TA, options) {
 
   // init
 
-  _predictions._onDocumentClick = function (e) {
+  function _onDocumentClick (e) {
     var el = e.target
     if( _predictions.showing_custom || TA.focus_root.activeElement === TA.input_el ) return
 
@@ -37,6 +37,8 @@ export default function TypeaheadPredictions (TA, options) {
     }
     _predictions.hide()
   }
+
+  _predictions._onDocumentClick = _onDocumentClick
 
   _predictions.hide()
 
@@ -56,9 +58,9 @@ export default function TypeaheadPredictions (TA, options) {
     )
   }
 
-  if( options.custom_address ) (function () {
+  if( options.custom_address ) (function __initCustomAddressButton () {
     var button_custom_address_el = _create('button.-custom-address', { type: 'button' }, { textContent: options.custom_address.label })
-    _on(button_custom_address_el, 'click', function () {
+    _on(button_custom_address_el, 'click', function __initCustomAddressButtonClick () {
         _predictions.showing_custom = true
         options.custom_address.getter(function _resolveCustomAddress (custom_address) {
           _predictions.showing_custom = false
@@ -83,7 +85,7 @@ export default function TypeaheadPredictions (TA, options) {
   if( options.custom_address || options.license_img ) wrapper_el.appendChild(predictions_footer_el)
 }
 
-TypeaheadPredictions.prototype.show = function (refresh_render) {
+TypeaheadPredictions.prototype.show = function __protoTypeaheadPredictionsShow (refresh_render) {
   this.wrapper_el.style.display = ''
   this.is_hidden = false
   
@@ -91,21 +93,21 @@ TypeaheadPredictions.prototype.show = function (refresh_render) {
   
   _on(document, 'click', this._onDocumentClick, true)
 }
-TypeaheadPredictions.prototype.hide = function () {
+TypeaheadPredictions.prototype.hide = function __protoTypeaheadPredictionsHide () {
   this.wrapper_el.style.display = 'none'
   this.is_hidden = true
 
   _off(document, 'click', this._onDocumentClick, true)
 }
 
-TypeaheadPredictions.prototype.hasFocus = function () {
+TypeaheadPredictions.prototype.hasFocus = function __protoTypeaheadPredictionsHasFocus () {
   var active_element = this.TA.focus_root.activeElement
   
   return active_element === this.wrapper_el || this.wrapper_el.contains(active_element)
 }
 
-TypeaheadPredictions.prototype.select = function (prediction) {
-  // console.warn('TypeaheadPredictions.prototype.select', prediction)
+TypeaheadPredictions.prototype.select = function __protoTypeaheadPredictionsSelect (prediction) {
+  console.warn('TypeaheadPredictions.prototype.select', prediction)
   var children = this.list_el.children ||[]
 
   this.selected = prediction
@@ -131,19 +133,19 @@ function _selectDelta (loaded_predictions, delta) {
   }
 }
 
-TypeaheadPredictions.prototype.selectPrevious = function () {
+TypeaheadPredictions.prototype.selectPrevious = function __protoTypeaheadPredictionsSelectPrevious () {
   if( !this.loaded_predictions ) return
 
   _selectDelta.call(this, this.loaded_predictions, -1)
 }
 
-TypeaheadPredictions.prototype.selectNext = function () {
+TypeaheadPredictions.prototype.selectNext = function __protoTypeaheadPredictionsSelectNext () {
   if( !this.loaded_predictions ) return
 
   _selectDelta.call(this, this.loaded_predictions, 1)
 }
 
-TypeaheadPredictions.prototype.setPredictions = function (predictions_data, custom_address) {
+TypeaheadPredictions.prototype.setPredictions = function __protoTypeaheadPredictionsSetPredictions (predictions_data, custom_address) {
   var _predictions = this
 
   if( predictions_data ) predictions_data = predictions_data.slice()
@@ -166,17 +168,17 @@ TypeaheadPredictions.prototype.setPredictions = function (predictions_data, cust
   }
 }
 
-TypeaheadPredictions.prototype.clear = function (flush_custom) {
+TypeaheadPredictions.prototype.clear = function __protoTypeaheadPredictionsClear (flush_custom) {
   if( flush_custom ) this.custom_predictions.splice(0)
   this.render([])
 }
 
-TypeaheadPredictions.prototype.addCustomPrediction = function (custom_address) {
+TypeaheadPredictions.prototype.addCustomPrediction = function __protoTypeaheadPredictionsAddCustomPrediction (custom_address) {
   this.custom_predictions.push(custom_address)
   this.setPredictions()
 }
 
-TypeaheadPredictions.prototype.render = function (predictions_data) {
+TypeaheadPredictions.prototype.render = function __protoTypeaheadPredictionsRender (predictions_data) {
   var _predictions = this
 
   if( predictions_data ) _predictions.setPredictions(predictions_data)
