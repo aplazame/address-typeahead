@@ -234,7 +234,7 @@
           onChange = function (input_text, address, number_typed, show_number_error) {
             var error_key = '';
 
-            if( !address ) error_key = input_text ? 'address_mismatch' : 'required';
+            if( !address ) error_key = input_text ? (show_number_error ? 'address_mismatch' : '') : 'required';
             else if( !address.street_number ) {
               // if( number_typed && Number(number_typed) !== Number(address.street_number) ) error_key = 'number_mismatch';
               // else if( !address.street_number ) error_key = 'number_missing';

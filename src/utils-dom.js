@@ -3,8 +3,8 @@ var arrayShift = Array.prototype.shift
 
 function __extractProps (tag, props) {
   return (tag || '')
-    .replace(/#([^\s.]+)/, function (_matched, id) { props.id = id; return '' })
-    .replace(/\.([^\s.]+)/g, function (_matched, class_name) {
+    .replace(/#([^\s.]+)/, function __extractId (_matched, id) { props.id = id; return '' })
+    .replace(/\.([^\s.]+)/g, function __extractClasses (_matched, class_name) {
       props.className = (props.className ? ( props.className + ' ' + class_name ) : class_name )
       return ''
     })
@@ -16,7 +16,7 @@ function __create (tag, attrs, props, children) {
   if( attrs ) for( key in attrs ) el.setAttribute(key, attrs[key])
   for( key in props ) el[key] = props[key]
 
-  if( children ) children.forEach(function (_child) { el.appendChild(_child) })
+  if( children ) children.forEach(function __createAppendChild (_child) { el.appendChild(_child) })
 
   return el
 }
@@ -44,39 +44,39 @@ export function _create () {
 
 var classListEnabled = 'classList' in document.documentElement
 
-export var hasClass = classListEnabled ? function (el, className) {
+export var hasClass = classListEnabled ? function __classListHasClass (el, className) {
   return el.classList.contains(className)
-} : function (el, className) {
+} : function __polyfillHasClass (el, className) {
   return new RegExp('\\b' + (className || '') + '\\b','').test(el.className)
 }
 
 
-export var _addClass = classListEnabled ? function (el, className) {
+export var _addClass = classListEnabled ? function __classListAddClass (el, className) {
   el.classList.add(className)
-} : function (el, className) {
+} : function __polyfillAddClass (el, className) {
   if( !hasClass(el, className) ) el.className += ' ' + className
 }
 
-export var _removeClass = classListEnabled ? function (el, className) {
+export var _removeClass = classListEnabled ? function __classListRemoveClass (el, className) {
   el.classList.remove(className)
-} : function (el, className) {
+} : function __polyfillRemoveClass (el, className) {
   el.className = el.className.replace(new RegExp('\\s*' + className + '\\s*','g'), ' ')
 }
 
-export var _toggleClass = classListEnabled ? (function () {
+export var _toggleClass = classListEnabled ? (function __classListToggleClass () {
   var aux = document.createElement('span')
   aux.classList.toggle('test', true)
   aux.classList.toggle('test', true)
 
   // IE does not support second parameter toggle
-  return aux.classList.contains('test') ? function (el, className, toggle) {
+  return aux.classList.contains('test') ? function __classListToggleClassNative (el, className, toggle) {
    el.classList.toggle(className, toggle)
-  } : function (el, className, toggle) {
+  } : function __classListToggleClassNativePolyfill (el, className, toggle) {
    toggle = toggle === undefined ? !el.classList.contains(className) : toggle
    if( toggle ) el.classList.add(className)
    else el.classList.remove(className)
   }
-})() : function (el, className) {
+})() : function __polyfillToggleClass (el, className) {
   el.className = el.className.replace(new RegExp('\\s*' + className + '\\s*','g'), ' ')
 }
 

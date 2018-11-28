@@ -12,7 +12,7 @@ function GooglePlaceTypeahead (options) {
 
 var callback_num = 0
 
-GooglePlaceTypeahead.prototype.load = function (cb) {
+GooglePlaceTypeahead.prototype.load = function __protoGooglePlaceTypeaheadLoad (cb) {
   var self = this
 
   if( self.loaded ) return cb(self)
@@ -26,7 +26,7 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
 
   self.loading = true
 
-  window[callback_name] = function () {
+  window[callback_name] = function __googleJSCallback () {
     self.places = window.google.maps.places
     self.predictions_OK = window.google.maps.places.PlacesServiceStatus.OK
 
@@ -40,7 +40,7 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
     delete self.loading
     self.loaded = true
 
-    self.loading_listeners.splice(0).forEach(function (cb) { cb(self) })
+    self.loading_listeners.splice(0).forEach(function __googleJSCallbackRunListeners (cb) { cb(self) })
   }
 
   script.src = 'https://maps.googleapis.com/maps/api/js?key=' +
@@ -51,7 +51,7 @@ GooglePlaceTypeahead.prototype.load = function (cb) {
   return this
 }
 
-GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess, onError) {
+GooglePlaceTypeahead.prototype.getPredictions = function __protoGooglePlaceTypeaheadGetPredictions (input_text, onSuccess, onError) {
   if( typeof input_text === 'string' ) input_text = input_text.trim()
 
   if( !input_text ) {
@@ -69,11 +69,11 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
 
   // var self = this;
 
-  self.load(function () {
+  self.load(function __loadPredictions () {
     self.service.autocomplete.getPlacePredictions( _merge({}, self.options, {
       input: input_text,
       sessionToken: self.options.session_token || self.session_token,
-    }), function (predictions, status) {
+    }), function __loadPredictionsCallback (predictions, status) {
       if( status != self.predictions_OK ) {
         if( onError instanceof Function ) onError(status)
         return
@@ -88,7 +88,7 @@ GooglePlaceTypeahead.prototype.getPredictions = function (input_text, onSuccess,
 
 }
 
-GooglePlaceTypeahead.prototype.getPredictionHTML = function (prediction) {
+GooglePlaceTypeahead.prototype.getPredictionHTML = function __protoGooglePlaceTypeaheadGetPredictionHTML (prediction) {
   var cursor = 0, src = prediction.description, result = '', from, len
 
   if( !prediction.matched_substrings ) return prediction.formatted_address
@@ -111,7 +111,7 @@ GooglePlaceTypeahead.prototype.getPredictionHTML = function (prediction) {
 function _parsePlace (place, prediction) {
   var fields = {}
 
-  place.address_components.forEach(function (component) {
+  place.address_components.forEach(function __cacheField (component) {
     fields[ component.types[0] ] = component.long_name
   })
 
@@ -149,7 +149,7 @@ function _parsePlace (place, prediction) {
 // docs: https://developers.google.com/maps/documentation/javascript/places#place_details_requests
 var _place_fields = 'address_component, adr_address, alt_id, formatted_address, geometry, icon, id, name, permanently_closed, photo, place_id, plus_code, scope, type, url, utc_offset, vicinity'.split(/ *, */)
 
-GooglePlaceTypeahead.prototype.getAddress = function (prediction, onSuccess, onError) {
+GooglePlaceTypeahead.prototype.getAddress = function __protoGooglePlaceTypeaheadGetAddress (prediction, onSuccess, onError) {
   var self = this,
       addresses_cache = self.addresses_cache
 
@@ -161,7 +161,7 @@ GooglePlaceTypeahead.prototype.getAddress = function (prediction, onSuccess, onE
   self.service.place.getDetails({
     placeId: prediction.place_id,
     fields: self.options.place_fields || _place_fields,
-  }, function (place, result) {
+  }, function __getDetailsCallback (place, result) {
     if( result === 'OK' ) {
       addresses_cache[prediction.place_id] = _parsePlace(place, prediction)
       if( onSuccess instanceof Function ) onSuccess( addresses_cache[prediction.place_id] )

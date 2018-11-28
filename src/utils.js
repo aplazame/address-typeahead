@@ -1,40 +1,55 @@
 
-export var _now = Date.now || function () { return new Date().getTime() }
+export var _now = Date.now || function __dateNowPolyfill () { return new Date().getTime() }
 
 export function debounce (fn, debounce_duration) {
   var debouncing = null,
-      last_hit = _now(),
-      runHit = function (_this, _args) {
-        fn.apply(_this, _args)
-        last_hit = _now()
-        debouncing = setTimeout(function () {
-          debouncing = null
-        }, debounce_duration)
-      }
+      last_hit = _now()
+
+  function runHit (_this, _args) {
+    fn.apply(_this, _args)
+    last_hit = _now()
+    debouncing = setTimeout(function __cancelRunHitDebounce () {
+      debouncing = null
+    }, debounce_duration)
+  }
 
   debounce_duration = debounce_duration || 400
 
-  return function () {
+  return function _curryDebounce () {
     var _this = this, _args = arguments
 
     if( !debouncing || (_now() - last_hit) > debounce_duration ) {
       runHit(_this, _args)
     } else {
       clearTimeout(debouncing)
-      debouncing = setTimeout(function () {
+      debouncing = setTimeout(function _debouncedRunHit () {
         runHit(_this, _args)
       }, debounce_duration)
     }
   }
 }
 
-var arrayShift = [].shift,
-    isArray = function (o) {
-      return o instanceof Array
-    },
-    isObject = function (o) {
-      return typeof o === 'object' && o !== null
-    }
+var arrayShift = [].shift
+
+function isArray (o) {
+  return o instanceof Array
+}
+
+function isObject (o) {
+  return typeof o === 'object' && o !== null
+}
+
+export function _runListeners (args, this_arg) {
+  return function __runListeners (listener) {
+    listener.apply(this_arg, args)
+  }
+}
+
+export function _runDelayed (delay_time, fn) {
+  return function __runDelayed () {
+    setTimeout(fn, delay_time)
+  }
+}
 
 export function _merge () {
   var dest = arrayShift.call(arguments),
@@ -90,37 +105,40 @@ export function eventMethods (target) {
 
   target = target || {}
 
-  target.on = function (event_name, listener) {
+  function _on (event_name, listener) {
     listeners[event_name] = listeners[event_name] || []
     listeners[event_name].push(listener)
     return target
   }
 
-  target.once = function (event_name, listener) {
+  function _once (event_name, listener) {
     listeners_once[event_name] = listeners_once[event_name] || []
     listeners_once[event_name].push(listener)
     return target
   }
 
-  target.off = function (event_name, listener) {
+  function _off (event_name, listener) {
     if( listeners[event_name] ) _removeItem(listeners[event_name], listener)
     return target
   }
 
-  target.emit = function (event_name, args, this_arg) {
+  function _emit (event_name, args, this_arg) {
+    var listenersRunner = _runListeners(args, this_arg)
+
     if( listeners[event_name] ) {
-      listeners[event_name].forEach(function (listener) {
-        listener.apply(this_arg, args)
-      })
+      listeners[event_name].forEach(listenersRunner)
     }
 
     if( listeners_once[event_name] ) {
-      listeners_once[event_name].splice(0).forEach(function (listener) {
-        listener.apply(this_arg, args)
-      })
+      listeners_once[event_name].splice(0).forEach(listenersRunner)
     }
     return target
   }
+
+  target.on = _on
+  target.once = _once
+  target.off = _off
+  target.emit = _emit
 
   return target
 }
