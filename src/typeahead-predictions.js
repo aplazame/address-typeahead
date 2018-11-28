@@ -66,8 +66,7 @@ export default function TypeaheadPredictions (TA, options) {
           custom_address.formatted_address = _formattedAddress(custom_address)
           custom_address.url = 'https://maps.google.com/?q=' + encodeURIComponent( custom_address.formatted_address )
 
-          _predictions.custom_predictions.push(custom_address)
-          _predictions.setPredictions([])
+          _predictions.setPredictions([], custom_address)
 
           _predictions.render()
           _predictions.select(custom_address)
@@ -144,7 +143,7 @@ TypeaheadPredictions.prototype.selectNext = function () {
   _selectDelta.call(this, this.loaded_predictions, 1)
 }
 
-TypeaheadPredictions.prototype.setPredictions = function (predictions_data) {
+TypeaheadPredictions.prototype.setPredictions = function (predictions_data, custom_address) {
   var _predictions = this
 
   if( predictions_data ) predictions_data = predictions_data.slice()
@@ -152,7 +151,10 @@ TypeaheadPredictions.prototype.setPredictions = function (predictions_data) {
 
   var loaded_predictions = predictions_data.slice()
 
-  if( _predictions.custom_predictions.length ) {
+  if( !_predictions.options.keep_custom ) {
+    if( custom_address ) loaded_predictions.push(custom_address)
+  } else if( _predictions.custom_predictions.length ) {
+    if( custom_address ) _predictions.custom_predictions.push(custom_address)
     _push.apply(loaded_predictions, _predictions.custom_predictions)
   }
 
@@ -186,7 +188,7 @@ TypeaheadPredictions.prototype.render = function (predictions_data) {
   var i, n, tmp_prediction_el, children = list_el.children
 
   _toggleClass(wrapper_el, '_has-predictions', _predictions.predictions_data && _predictions.predictions_data.length)
-  _toggleClass(wrapper_el, '_has-custom_predictionss', _predictions.custom_predictions.length)
+  _toggleClass(wrapper_el, '_has-custom_predictions', _predictions.custom_predictions.length)
 
   function __onClickPrediction () {
     _predictions.select(this.prediction)
