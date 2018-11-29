@@ -147,6 +147,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
       if( fetching_predictions ) {
         var _fetching_predictions = fetching_predictions
+        fetching_predictions = null
         _fetching_predictions.forEach(_runListeners(_predictions_data))
       }
       // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
