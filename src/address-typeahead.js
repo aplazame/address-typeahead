@@ -194,8 +194,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       _cursorToNumberPosition(input_el, selected_address)
       __onInput()
     } else {
-      if( fetching_address ) fetching_address.push(_renderInputOnBlur)
-      else _renderInputOnBlur(selected_address)
+      _renderInputOnBlur(selected_address)
       predictions_ctrl.hide()
     }
     if( options.onEnter instanceof Function ) options.onEnter(selected_address)
