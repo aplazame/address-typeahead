@@ -40,6 +40,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       selected_address = null,
       number_typed = false,
       input_value_on_selected = null,
+      fetching_predictions = null,
       fetching_address = null
 
   var component = eventMethods({
@@ -109,10 +110,13 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   var last_input_value = null
 
   function __onInput () {
+    fetching_predictions = null
+
     if( input_el.value === last_input_value ) {
       if( focus_root.activeElement === input_el ) predictions_ctrl.show()
       return
     }
+
     last_input_value = input_el.value
     number_typed = _numberTyped(input_el.value)
 
@@ -125,6 +129,8 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     // console.log('__onInput', input_el.value)
 
     var fetched_input_value = input_el.value
+
+    fetching_predictions = []
     place_provider.getPredictions(input_el.value, function __onInputWithPredictions (_predictions_data) {
       // predictions_ctrl.selected(null)
       predictions_ctrl.render(_predictions_data)
@@ -134,7 +140,11 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       if( _predictions_data[0] && _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
         predictions_ctrl.select(_predictions_data[0])
       }
+
+      if( fetching_predictions ) fetching_predictions.forEach(_runListeners(_predictions_data))
       // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
+    }, function __onInputWithPredictionsError () {
+      if( input_el.value === fetched_input_value ) fetching_predictions = null
     })
   }
 
@@ -176,6 +186,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   })
 
   function __onEnterKey () {
+    if( fetching_predictions ) return fetching_predictions.push(__onEnterKey)
     if( fetching_address ) return fetching_address.push(__onEnterKey)
 
     if( selected_address && !selected_address.street_number ) {
