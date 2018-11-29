@@ -195,6 +195,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
           else _renderInputOnBlur(selected_address)
           predictions_ctrl.hide()
         }
+        if( options.onEnter instanceof Function ) options.onEnter(selected_address)
         break
       case KEY_UP:
         e.preventDefault()
