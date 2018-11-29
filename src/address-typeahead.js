@@ -102,8 +102,12 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       if( input_el.value !== input_value_on_selected || predictions_ctrl.selected !== prediction ) return
       _selectAddress(address)
       if( callback instanceof Function ) callback(address)
-      fetching_address.forEach(_runListeners([address]))
-      fetching_address = null
+
+      if( fetching_address ) {
+        var _fetching_address = fetching_address
+        fetching_address = null
+        _fetching_address.forEach(_runListeners([address]))
+      }
     })
   }
 
@@ -141,7 +145,10 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
         predictions_ctrl.select(_predictions_data[0])
       }
 
-      if( fetching_predictions ) fetching_predictions.forEach(_runListeners(_predictions_data))
+      if( fetching_predictions ) {
+        var _fetching_predictions = fetching_predictions
+        _fetching_predictions.forEach(_runListeners(_predictions_data))
+      }
       // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
     }, function __onInputWithPredictionsError () {
       if( input_el.value === fetched_input_value ) fetching_predictions = null
