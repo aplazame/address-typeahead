@@ -114,12 +114,12 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   var last_input_value = null
 
   function __onInput () {
-    fetching_predictions = null
-
     if( input_el.value === last_input_value ) {
       if( focus_root.activeElement === input_el ) predictions_ctrl.show()
       return
     }
+
+    fetching_predictions = null
 
     last_input_value = input_el.value
     number_typed = _numberTyped(input_el.value)
