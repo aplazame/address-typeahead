@@ -179,7 +179,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
     switch (e.keyCode) {
       case KEY_ESC:
-        input_el.value
+        input_el.value = ''
         __onInput()
         break
       case KEY_ENTER:
