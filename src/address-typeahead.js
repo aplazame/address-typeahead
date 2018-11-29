@@ -131,6 +131,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       return
     }
 
+    var previous_fetching_predictions = fetching_predictions
     _cancelFetchingPredictions(fetching_predictions)
 
     last_input_value = input_el.value
@@ -171,7 +172,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
         }, function __onInputWithPredictionsError () {
           if( input_el.value === fetched_input_value ) _cancelFetchingPredictions(fetching_predictions)
         })
-      }, options.debounce_duration || 400)
+      }, previous_fetching_predictions ? (options.debounce_duration || 400) : 0 )
     }
   }
 
