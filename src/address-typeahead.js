@@ -61,11 +61,12 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       if( _address.place === 'custom' ) {
         predictions_ctrl.addCustomPrediction(_address)
         input_el.value = _address2Search(_address)
+        predictions_ctrl.select(_address)
       } else {
         predictions_ctrl.setPredictions([_address.place])
         input_el.value = _address2Search(_address, true)
+        predictions_ctrl.select(_address.place)
       }
-      predictions_ctrl.select(_address.place)
       _emitEvent('change')
     },
   })
