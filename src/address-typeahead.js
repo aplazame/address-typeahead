@@ -175,6 +175,21 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     predictions_ctrl.show()
   })
 
+  function __onEnterKey () {
+    if( fetching_address ) return fetching_address.push(__onEnterKey)
+
+    if( selected_address && !selected_address.street_number ) {
+      input_el.value = _address2Search(selected_address, true, true)
+      _cursorToNumberPosition(input_el, selected_address)
+      __onInput()
+    } else {
+      if( fetching_address ) fetching_address.push(_renderInputOnBlur)
+      else _renderInputOnBlur(selected_address)
+      predictions_ctrl.hide()
+    }
+    if( options.onEnter instanceof Function ) options.onEnter(selected_address)
+  }
+
   input_el.addEventListener('keydown', function __onInputKeyDown (e) {
     if( e.keyCode !== KEY_ENTER ) predictions_ctrl.show()
 
@@ -187,22 +202,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
         if( predictions_ctrl.is_hidden ) return
         e.preventDefault()
 
-        if( selected_address && !selected_address.street_number ) {
-          input_el.value = _address2Search(selected_address, true, true)
-          _cursorToNumberPosition(input_el, selected_address)
-          __onInput()
-        } else {
-          if( fetching_address ) fetching_address.push(_renderInputOnBlur)
-          else _renderInputOnBlur(selected_address)
-          predictions_ctrl.hide()
-        }
-        if( options.onEnter instanceof Function ) {
-          if( fetching_address ) {
-            fetching_address.push(function __onEnterDeferred () {
-              options.onEnter(selected_address)
-            })
-          } else options.onEnter(selected_address)
-        }
+        __onEnterKey()
         break
       case KEY_UP:
         e.preventDefault()
