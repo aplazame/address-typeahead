@@ -41,6 +41,7 @@ function isObject (o) {
 
 export function _runListeners (args, this_arg) {
   return function __runListeners (listener) {
+    // ( listener.listener || listener ).apply(this_arg, args)
     listener.apply(this_arg, args)
   }
 }

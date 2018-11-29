@@ -1,5 +1,5 @@
 
-import { debounce, eventMethods, _runListeners, _runDelayed } from './utils'
+import { eventMethods, _runListeners, _runDelayed } from './utils'
 import { _on } from './utils-dom'
 
 import GooglePlaceTypeahead from './provider-google-place-autocomplete'
@@ -83,13 +83,19 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
   var predictions_ctrl = new TypeaheadPredictions(self, options)
 
-  // methods  
+  // methods
+
+  function _setInputValue (_value) {
+    input_el.value = _value
+    // console.warn('_setInputValue', _value)
+  }
 
   function _emitEvent (event_name) {
     component.emit(event_name, [input_el.value, selected_address, number_typed])
   }
 
   function _selectAddress (address) {
+    fetching_address = null
     selected_address = address
     // console.log('selected_address', selected_address, input_el.value)
     _emitEvent('change')
@@ -98,20 +104,26 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   function _fetchAddress (prediction, callback) {
     fetching_address = []
 
+    // console.warn('_fetchAddress')
+
     place_provider.getAddress(prediction, function __getAddress (address) {
       if( input_el.value !== input_value_on_selected || predictions_ctrl.selected !== prediction ) return
+
+      var _listeners = fetching_address
       _selectAddress(address)
       if( callback instanceof Function ) callback(address)
 
-      if( fetching_address ) {
-        var _fetching_address = fetching_address
-        fetching_address = null
-        _fetching_address.forEach(_runListeners([address]))
-      }
+      if( _listeners ) _listeners.forEach(_runListeners([address]))
     })
   }
 
   var last_input_value = null
+
+  function _cancelFetchingPredictions () {
+    if( !fetching_predictions ) return
+    if( fetching_predictions.timeout ) clearTimeout(fetching_predictions.timeout)
+    fetching_predictions = null
+  }
 
   function __onInput () {
     if( input_el.value === last_input_value ) {
@@ -119,7 +131,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       return
     }
 
-    fetching_predictions = null
+    _cancelFetchingPredictions(fetching_predictions)
 
     last_input_value = input_el.value
     number_typed = _numberTyped(input_el.value)
@@ -127,36 +139,44 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     if( !input_el.value ) {
       input_value_on_selected = ''
       predictions_ctrl.clear()
-      return _selectAddress(null)
+      _selectAddress(null)
+      return
     }
 
     // console.log('__onInput', input_el.value)
 
     var fetched_input_value = input_el.value
 
-    fetching_predictions = []
-    place_provider.getPredictions(input_el.value, function __onInputWithPredictions (_predictions_data) {
-      // predictions_ctrl.selected(null)
-      predictions_ctrl.render(_predictions_data)
-
-      if( !_predictions_data.length || input_el.value !== fetched_input_value ) return
-
-      if( _predictions_data[0] && _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
-        predictions_ctrl.select(_predictions_data[0])
-      }
-
-      if( fetching_predictions ) {
-        var _fetching_predictions = fetching_predictions
-        fetching_predictions = null
-        _fetching_predictions.forEach(_runListeners(_predictions_data))
-      }
-      // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
-    }, function __onInputWithPredictionsError () {
-      if( input_el.value === fetched_input_value ) fetching_predictions = null
-    })
+    fetching_predictions = {
+      listeners: [],
+      input_value: input_el.value,
+      timeout: setTimeout(function __debouncedGetPredictions () {
+        place_provider.getPredictions(input_el.value, function __onInputWithPredictions (_predictions_data) {
+          // console.warn('place_provider.getPredictions', _predictions_data)
+          // predictions_ctrl.selected(null)
+          predictions_ctrl.render(_predictions_data)
+  
+          if( !_predictions_data.length || input_el.value !== fetched_input_value ) return
+  
+          if( fetching_predictions ) {
+            var _listeners = fetching_predictions.listeners
+            _cancelFetchingPredictions(fetching_predictions)
+            _listeners.forEach(_runListeners(_predictions_data))
+          }
+  
+          // if( _predictions_data[0] && _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
+          //   predictions_ctrl.select(_predictions_data[0])
+          // }
+          // if( _predictions_data[0] ) _fetchAddress(_predictions_data[0])
+        }, function __onInputWithPredictionsError () {
+          if( input_el.value === fetched_input_value ) _cancelFetchingPredictions(fetching_predictions)
+        })
+      }, options.debounce_duration || 400)
+    }
   }
 
   predictions_ctrl.on('selected', function __onPredictionSelected (prediction) {
+    // console.warn('selected', prediction)
     if( !prediction ) return _selectAddress(null)
     // if( !prediction ) return
 
@@ -166,20 +186,20 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     else _fetchAddress(prediction)
   })
 
-  var _onInput = debounce(__onInput, options.debounce_duration)
+  // var _onInput = debounce(__onInput, options.debounce_duration)
 
-  _on(input_el, 'input', _onInput )
-  _on(input_el, 'change', _onInput )
+  _on(input_el, 'input', __onInput )
+  _on(input_el, 'change', __onInput )
 
   function __onFocus () {
     predictions_ctrl.show()
     if( selected_address && !selected_address.street_number ) {
-      input_el.value = _formattedAddress(selected_address, true)
+      _setInputValue( _formattedAddress(selected_address, true) )
       _cursorToNumberPosition(input_el, selected_address)
     } else if( selected_address ) {
-      input_el.value = _address2Search(selected_address, true, false)
+      _setInputValue( _address2Search(selected_address, true, false) )
     }
-    if( !selected_address || selected_address.place !== 'custom' ) __onInput()
+    // if( !selected_address || selected_address.place !== 'custom' ) __onInput()
   }
 
   _on(input_el, 'focus', __onFocus)
@@ -194,11 +214,21 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   })
 
   function __onEnterKey () {
-    if( fetching_predictions ) return fetching_predictions.push(__onEnterKey)
-    if( fetching_address ) return fetching_address.push(__onEnterKey)
+    if( fetching_predictions ) {
+      // console.warn('fetching_predictions')
+      fetching_predictions.listeners.push(__onEnterKey)
+      return
+    }
+    if( fetching_address ) {
+      // console.warn('fetching_address')
+      fetching_address.push(__onEnterKey)
+      return
+    }
+
+    // console.warn('__onEnterKey')
 
     if( selected_address && !selected_address.street_number ) {
-      input_el.value = _address2Search(selected_address, true, true)
+      _setInputValue( _address2Search(selected_address, true, true) )
       _cursorToNumberPosition(input_el, selected_address)
       __onInput()
     } else {
@@ -213,7 +243,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
     switch (e.keyCode) {
       case KEY_ESC:
-        input_el.value = ''
+        _setInputValue('')
         __onInput()
         break
       case KEY_ENTER:
@@ -234,7 +264,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   })
 
   function _renderInputOnBlur (_address) {
-    input_el.value = _formattedAddress(_address, true)
+    _setInputValue( _formattedAddress(_address, true) )
   }
 
   _on(input_el, 'blur', _runDelayed(100, function __onInputBlur () {
@@ -252,8 +282,6 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     return component
   }
 
-  
-
   if( input_el.value ) __onInput()
   else if( options.try_searches ) {
     __trySearches(
@@ -262,7 +290,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       function __onTrySearchMatch (predictions_data, try_search) {
         predictions_ctrl.setPredictions(predictions_data)
         predictions_ctrl.select(predictions_data[0])
-        input_el.value = try_search
+        _setInputValue( try_search )
       }
     )
   }

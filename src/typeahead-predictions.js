@@ -73,18 +73,20 @@ export default function TypeaheadPredictions (TA, options) {
     })
 
     predictions_footer_el.appendChild(button_custom_address_el)
-    
-    if( TA.provider.license_img ) {
-      predictions_footer_el.appendChild(
-        _create('.-license', [
-          _create('img', { src: TA.provider.license_img })
-        ])
-      )
-    }
 
   })()
 
-  if( options.custom_address || options.license_img ) wrapper_el.appendChild(predictions_footer_el)
+  var license_img = options.custom_provider_image || TA.provider.license_img
+
+  if( license_img ) {
+    predictions_footer_el.appendChild(
+      _create('.-license', [
+        _create('img', { src: license_img })
+      ])
+    )
+  }
+
+  if( options.custom_address || license_img ) wrapper_el.appendChild(predictions_footer_el)
 }
 
 TypeaheadPredictions.prototype.show = function __protoTypeaheadPredictionsShow (refresh_render) {
@@ -165,9 +167,13 @@ TypeaheadPredictions.prototype.setPredictions = function __protoTypeaheadPredict
   _predictions.predictions_data = predictions_data
   _predictions.loaded_predictions = loaded_predictions
 
-  if( _predictions.selected && loaded_predictions.indexOf(_predictions.selected) < 0 ) {
-    _predictions.select(null)
-  }
+  _predictions.select(
+    _predictions.selected && loaded_predictions.indexOf(_predictions.selected) >= 0 ?
+    _predictions.selected : ( loaded_predictions[0] || null )
+  )
+  // if( _predictions.selected && loaded_predictions.indexOf(_predictions.selected) < 0 ) {
+  //   _predictions.select(loaded_predictions[0] || null)
+  // }
 }
 
 TypeaheadPredictions.prototype.clear = function __protoTypeaheadPredictionsClear (flush_custom) {
