@@ -276,6 +276,8 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       return
     }
     _setInputValue( _formattedAddress(selected_address, true) )
+    number_typed = false
+    _emitEvent('change')
   }
 
   _on(input_el, 'blur', _runDelayed(100, function __onInputBlur () {
