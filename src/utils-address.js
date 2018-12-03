@@ -17,7 +17,7 @@ export function _formattedAddress (address, number_placeholder, show_region, sho
 }
 
 export function _numberTyped (input_value) {
-  var matches = input_value && input_value.match(/.*?, *(\d+) *(,.*?)?$|^.*? \d+/)
+  var matches = input_value && input_value.match(/.+?\w+[ ,]+(\d+)/)
   return matches ? matches[1] : null
 }
 
