@@ -264,13 +264,22 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     }
   })
 
-  function _renderInputOnBlur (_address) {
-    _setInputValue( _formattedAddress(_address, true) )
+  function _renderInputOnBlur () {
+    if( fetching_predictions ) {
+      // console.warn('fetching_predictions')
+      fetching_predictions.listeners.push(_renderInputOnBlur)
+      return
+    }
+    if( fetching_address ) {
+      // console.warn('fetching_address')
+      fetching_address.push(_renderInputOnBlur)
+      return
+    }
+    _setInputValue( _formattedAddress(selected_address, true) )
   }
 
   _on(input_el, 'blur', _runDelayed(100, function __onInputBlur () {
-    if( fetching_address ) fetching_address.push(_renderInputOnBlur)
-    else _renderInputOnBlur(selected_address)
+    _renderInputOnBlur()
 
     if( predictions_ctrl.showing_custom || focus_root.activeElement === input_el ) return
 

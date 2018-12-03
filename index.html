@@ -221,7 +221,8 @@
             }
           },
           error_messages = {
-            number_missing: 'Falta el número de la dirección'
+            number_missing: 'Falta el número de la dirección',
+            number_mismatch: 'No existe el número en la dirección seleccionada',
           },
           onAddress = function (address) {
             // console.log('address', address);
@@ -239,7 +240,7 @@
               // if( number_typed && Number(number_typed) !== Number(address.street_number) ) error_key = 'number_mismatch';
               // else if( !address.street_number ) error_key = 'number_missing';
 
-              error_key = 'number_missing';
+              error_key = number_typed ? 'number_mismatch' : 'number_missing';
             }
 
             // console.log('onChange', arguments, error_key || 'NO_ERROR' );
