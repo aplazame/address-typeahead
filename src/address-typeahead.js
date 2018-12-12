@@ -41,7 +41,8 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       number_typed = false,
       input_value_on_selected = null,
       fetching_predictions = null,
-      fetching_address = null
+      fetching_address = null,
+      try_search_value = null
 
   var component = eventMethods({
     get value () {
@@ -98,6 +99,17 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     fetching_address = null
     selected_address = address
     // console.log('selected_address', selected_address, input_el.value)
+
+    if( try_search_value ) {
+      if( !address || !address.street_number ) {
+        selected_address = null
+        return
+      }
+      _setInputValue( _address2Search(selected_address, true, false) )
+      // _setInputValue( try_search_value )
+      try_search_value = null
+    }
+
     _emitEvent('change')
   }
 
@@ -302,7 +314,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       function __onTrySearchMatch (predictions_data, try_search) {
         predictions_ctrl.setPredictions(predictions_data)
         predictions_ctrl.select(predictions_data[0])
-        _setInputValue( try_search )
+        try_search_value = try_search
       }
     )
   }
