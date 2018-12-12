@@ -102,8 +102,8 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
     if( try_search_value ) {
       if( !address || !address.street_number ) {
-        selected_address = null
         predictions_ctrl.clear()
+        selected_address = null
         return
       }
       _setInputValue( _address2Search(selected_address, true, false) )
