@@ -107,10 +107,11 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
         return
       }
       _setInputValue( _address2Search(selected_address, true, false) )
-      predictions_ctrl.setPredictions(try_search_predictions)
+      predictions_ctrl.setPredictions(try_search_predictions, null, true)
       // _setInputValue( try_search_value )
       try_search_predictions = null
       try_search_value = null
+      if( focus_root.activeElement === input_el ) predictions_ctrl.show()
     }
 
     _emitEvent('change')

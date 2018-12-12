@@ -149,7 +149,7 @@ TypeaheadPredictions.prototype.selectNext = function __protoTypeaheadPredictions
   _selectDelta.call(this, this.loaded_predictions, 1)
 }
 
-TypeaheadPredictions.prototype.setPredictions = function __protoTypeaheadPredictionsSetPredictions (predictions_data, custom_address) {
+TypeaheadPredictions.prototype.setPredictions = function __protoTypeaheadPredictionsSetPredictions (predictions_data, custom_address, no_select) {
   var _predictions = this
 
   if( predictions_data ) predictions_data = predictions_data.slice()
@@ -166,6 +166,8 @@ TypeaheadPredictions.prototype.setPredictions = function __protoTypeaheadPredict
 
   _predictions.predictions_data = predictions_data
   _predictions.loaded_predictions = loaded_predictions
+
+  if( no_select ) return
 
   _predictions.select(
     _predictions.selected && loaded_predictions.indexOf(_predictions.selected) >= 0 ?
