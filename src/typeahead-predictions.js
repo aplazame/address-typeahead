@@ -1,5 +1,5 @@
 
-import { _create, _on, _off, _toggleClass } from './utils-dom'
+import { _create, _on, _off, _addClass, _removeClass, _toggleClass } from './utils-dom'
 import { eventMethods } from './utils'
 
 import { _address2Search, _formattedAddress } from './utils-address'
@@ -188,6 +188,16 @@ TypeaheadPredictions.prototype.addCustomPrediction = function __protoTypeaheadPr
   this.setPredictions()
 }
 
+TypeaheadPredictions.prototype.disable = function __protoTypeaheadPredictionsDisable () {
+  this.is_disabled = true
+  _addClass(this.wrapper_el, '_is-disabled')
+}
+
+TypeaheadPredictions.prototype.enable = function __protoTypeaheadPredictionsEnable () {
+  this.is_disabled = false
+  _removeClass(this.wrapper_el, '_is-disabled')
+}
+
 TypeaheadPredictions.prototype.render = function __protoTypeaheadPredictionsRender (predictions_data) {
   var _predictions = this
 
@@ -203,6 +213,8 @@ TypeaheadPredictions.prototype.render = function __protoTypeaheadPredictionsRend
   _toggleClass(wrapper_el, '_has-custom_predictions', _predictions.custom_predictions.length)
 
   function __onClickPrediction () {
+    if( _predictions.is_disabled ) return
+
     _predictions.select(this.prediction)
   }
 

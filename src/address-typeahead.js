@@ -138,6 +138,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   var last_input_value = null
 
   function _cancelFetchingPredictions () {
+    predictions_ctrl.enable()
     if( !fetching_predictions ) return
     if( fetching_predictions.timeout ) clearTimeout(fetching_predictions.timeout)
     fetching_predictions = null
@@ -150,7 +151,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
     }
 
     var previous_fetching_predictions = fetching_predictions
-    _cancelFetchingPredictions(fetching_predictions)
+    _cancelFetchingPredictions()
 
     last_input_value = input_el.value
     number_typed = _numberTyped(input_el.value)
@@ -166,6 +167,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
     var fetched_input_value = input_el.value
 
+    predictions_ctrl.disable()
     fetching_predictions = {
       listeners: [],
       input_value: input_el.value,
@@ -179,7 +181,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   
           if( fetching_predictions ) {
             var _listeners = fetching_predictions.listeners
-            _cancelFetchingPredictions(fetching_predictions)
+            _cancelFetchingPredictions()
             _listeners.forEach(_runListeners(_predictions_data))
           }
   
@@ -258,6 +260,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
   }
 
   input_el.addEventListener('keydown', function __onInputKeyDown (e) {
+    if( predictions_ctrl.is_disabled ) return
     if( e.keyCode !== KEY_ENTER ) predictions_ctrl.show()
 
     switch (e.keyCode) {

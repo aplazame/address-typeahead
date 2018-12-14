@@ -103,7 +103,7 @@ GooglePlaceTypeahead.prototype.getPredictionHTML = function __protoGooglePlaceTy
     cursor = from + len
   }
 
-  result += src.substr(cursor)
+  result += src.substr(cursor).replace(/^ | $/g, '&nbsp;')
 
   return result
 }
