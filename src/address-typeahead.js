@@ -20,6 +20,8 @@ function __trySearches (try_searches, getPredictions, callback) {
     if(predictions_data && predictions_data[0]) {
       callback(predictions_data, try_search)
     } else __trySearches(try_searches, getPredictions, callback)
+  }, function __trySearchesWithPredictionsCatch () {
+    __trySearches(try_searches, getPredictions, callback)
   })
 }
 
