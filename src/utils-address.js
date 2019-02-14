@@ -13,7 +13,7 @@ export function _address2Search (address, number_placeholder, show_area_name) {
 
 export function _formattedAddress (address, number_placeholder, show_region, show_country) {
   if( !address ) return ''
-  return address.street + _commaIf(address.street_number || (number_placeholder ? ' ' : '')) + _commaIf( address.postcode + ' ' + address.locality ) + _commaIf( address.province !== address.locality && address.province ) + _commaIf( show_region && address.region ) + _commaIf( show_country && address.country )
+  return address.street + _commaIf(address.street_number || (number_placeholder ? ' ' : '')) + _commaIf( address.postcode ? (address.postcode + ' ') : '' ) + _commaIf( address.locality ) + _commaIf( address.province !== address.locality && address.province ) + _commaIf( show_region && address.region ) + _commaIf( show_country && address.country )
 }
 
 export function _numberTyped (input_value) {
