@@ -63,7 +63,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
       if( !_address || !_address.place ) return
       selected_address = _address
 
-      if( _address.place === 'custom' ) {
+      if( _address.place && _address.place.scope  === 'custom' ) {
         predictions_ctrl.addCustomPrediction(_address)
         input_el.value = _address2Search(_address)
         predictions_ctrl.select(_address)
@@ -176,15 +176,15 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
           // console.warn('place_provider.getPredictions', _predictions_data)
           // predictions_ctrl.selected(null)
           predictions_ctrl.render(_predictions_data)
-  
+
           if( !_predictions_data.length || input_el.value !== fetched_input_value ) return
-  
+
           if( fetching_predictions ) {
             var _listeners = fetching_predictions.listeners
             _cancelFetchingPredictions()
             _listeners.forEach(_runListeners(_predictions_data))
           }
-  
+
           // if( _predictions_data[0] && _predictions_data.indexOf(predictions_ctrl.selected) < 0 ) {
           //   predictions_ctrl.select(_predictions_data[0])
           // }
@@ -203,7 +203,7 @@ AddressTypeahead.prototype.bind = function _protoAddressTypeaheadBind (input_el,
 
     input_value_on_selected = input_el.value
 
-    if( prediction.place === 'custom' ) _selectAddress(prediction)
+    if( prediction.place && prediction.place.scope === 'custom' ) _selectAddress(prediction)
     else _fetchAddress(prediction)
   })
 

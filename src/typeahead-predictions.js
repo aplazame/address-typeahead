@@ -56,7 +56,7 @@ export default function TypeaheadPredictions (TA, options) {
         _predictions.showing_custom = true
         options.custom_address.getter(function _resolveCustomAddress (custom_address) {
           _predictions.showing_custom = false
-          custom_address.place = 'custom'
+          custom_address.place = { scope: 'custom' }
           custom_address.formatted_address = _formattedAddress(custom_address)
           custom_address.url = 'https://maps.google.com/?q=' + encodeURIComponent( custom_address.formatted_address )
 
@@ -92,9 +92,9 @@ export default function TypeaheadPredictions (TA, options) {
 TypeaheadPredictions.prototype.show = function __protoTypeaheadPredictionsShow (refresh_render) {
   this.wrapper_el.style.display = ''
   this.is_hidden = false
-  
+
   if( refresh_render !== false ) this.render()
-  
+
   _on(document, 'click', this._onDocumentClick, true)
 }
 TypeaheadPredictions.prototype.hide = function __protoTypeaheadPredictionsHide () {
@@ -106,7 +106,7 @@ TypeaheadPredictions.prototype.hide = function __protoTypeaheadPredictionsHide (
 
 TypeaheadPredictions.prototype.hasFocus = function __protoTypeaheadPredictionsHasFocus () {
   var active_element = this.TA.focus_root.activeElement
-  
+
   return active_element === this.wrapper_el || this.wrapper_el.contains(active_element)
 }
 
