@@ -1,6 +1,6 @@
 {
   "name": "address-typeahead",
-  "version": "1.2.26",
+  "version": "1.2.27",
   "description": "",
   "main": "dist/address-typeahead.js",
   "scripts": {
