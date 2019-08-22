@@ -348,7 +348,7 @@ function _parsePlace (place, prediction) {
 }
 
 // docs: https://developers.google.com/maps/documentation/javascript/places#place_details_requests
-var _place_fields = 'address_component, adr_address, alt_id, formatted_address, geometry, icon, id, name, permanently_closed, photo, place_id, plus_code, scope, type, url, utc_offset, vicinity'.split(/ *, */);
+var _place_fields = 'address_component, adr_address, formatted_address, geometry, icon, id, name, permanently_closed, photo, place_id, plus_code, scope, type, url, utc_offset, vicinity'.split(/ *, */);
 
 GooglePlaceTypeahead.prototype.getAddress = function __protoGooglePlaceTypeaheadGetAddress (prediction, onSuccess, onError) {
   var self = this,
